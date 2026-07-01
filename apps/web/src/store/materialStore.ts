@@ -1,7 +1,11 @@
+/**
+ * materialStore — thin wrapper kept for backwards compatibility.
+ * All data now comes from the real API via materialsApi.
+ */
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { materialsApi, type MaterialMovement as ApiMovement } from '../api/materials'
 
-export type MaterialUnit = 'кг' | 'м' | 'шт' | 'рулон' | 'катушка'
+export type MaterialUnit = string
 
 export interface Material {
   id: string
@@ -24,85 +28,92 @@ export interface MaterialMovement {
 interface MaterialState {
   materials: Material[]
   movements: MaterialMovement[]
+  stockMap: Record<string, number>
+  loading: boolean
+  fetch: () => Promise<void>
   getStock: (materialId: string) => number
   getHistory: (materialId: string) => MaterialMovement[]
-  addMaterial: (m: Omit<Material, 'id' | 'createdAt'>) => Material
-  updateMaterial: (id: string, patch: Partial<Omit<Material, 'id' | 'createdAt'>>) => void
-  removeMaterial: (id: string) => void
+  addMaterial: (m: Omit<Material, 'id' | 'createdAt'>) => Promise<Material>
+  updateMaterial: (id: string, patch: Partial<Omit<Material, 'id' | 'createdAt'>>) => Promise<void>
+  removeMaterial: (id: string) => Promise<void>
   addMovement: (
     materialId: string,
     type: 'IN' | 'OUT',
     qty: number,
     comment: string,
     actor: string,
-  ) => void
+  ) => Promise<void>
 }
 
-function uid() { return `m_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` }
-const now = (d = 0) => new Date(Date.now() - d * 86400000).toISOString()
+function mapMov(m: ApiMovement): MaterialMovement {
+  return {
+    id: m.id,
+    materialId: m.materialId,
+    type: m.type,
+    qty: m.qty,
+    comment: m.comment ?? '',
+    actor: m.actor ?? '',
+    createdAt: m.createdAt,
+  }
+}
 
-const INIT_MATERIALS: Material[] = [
-  { id: 'mat_1', name: 'Ткань хлопок',    unit: 'кг',  description: 'Хлопок 180 г/м²',        createdAt: now(10) },
-  { id: 'mat_2', name: 'Ткань лён',       unit: 'кг',  description: 'Лён летний',              createdAt: now(10) },
-  { id: 'mat_3', name: 'Нитки белые',     unit: 'катушка', description: '5000 м, №40',        createdAt: now(9)  },
-  { id: 'mat_4', name: 'Нитки чёрные',    unit: 'катушка', description: '5000 м, №40',        createdAt: now(9)  },
-  { id: 'mat_5', name: 'Пуговицы',        unit: 'шт',  description: 'Д=12 мм, пластик',       createdAt: now(8)  },
-  { id: 'mat_6', name: 'Молнии металл',   unit: 'шт',  description: '30 см, золото',           createdAt: now(7)  },
-  { id: 'mat_7', name: 'Резинка широкая', unit: 'м',   description: '3 см ширина',             createdAt: now(7)  },
-]
+export const useMaterialStore = create<MaterialState>()((set, get) => ({
+  materials: [],
+  movements: [],
+  stockMap: {},
+  loading: false,
 
-const INIT_MOVEMENTS: MaterialMovement[] = [
-  { id: 'mm_01', materialId: 'mat_1', type: 'IN',  qty: 200, comment: 'Начальный склад',           actor: 'И.Беляев', createdAt: now(10) },
-  { id: 'mm_02', materialId: 'mat_1', type: 'OUT', qty: 50,  comment: 'Производство партия #001',   actor: 'Цех',      createdAt: now(6)  },
-  { id: 'mm_03', materialId: 'mat_1', type: 'IN',  qty: 50,  comment: 'Приход от поставщика',       actor: 'И.Беляев', createdAt: now(2)  },
-  { id: 'mm_04', materialId: 'mat_2', type: 'IN',  qty: 80,  comment: 'Начальный склад',            actor: 'И.Беляев', createdAt: now(10) },
-  { id: 'mm_05', materialId: 'mat_2', type: 'OUT', qty: 30,  comment: 'Производство партия #002',   actor: 'Цех',      createdAt: now(5)  },
-  { id: 'mm_06', materialId: 'mat_3', type: 'IN',  qty: 20,  comment: 'Начальный склад',            actor: 'И.Беляев', createdAt: now(9)  },
-  { id: 'mm_07', materialId: 'mat_3', type: 'OUT', qty: 3,   comment: 'Производство партия #001',   actor: 'Цех',      createdAt: now(6)  },
-  { id: 'mm_08', materialId: 'mat_4', type: 'IN',  qty: 15,  comment: 'Начальный склад',            actor: 'И.Беляев', createdAt: now(9)  },
-  { id: 'mm_09', materialId: 'mat_4', type: 'OUT', qty: 5,   comment: 'Производство партия #002',   actor: 'Цех',      createdAt: now(5)  },
-  { id: 'mm_10', materialId: 'mat_5', type: 'IN',  qty: 500, comment: 'Начальный склад',            actor: 'И.Беляев', createdAt: now(8)  },
-  { id: 'mm_11', materialId: 'mat_5', type: 'OUT', qty: 120, comment: 'Производство партия #001',   actor: 'Цех',      createdAt: now(6)  },
-  { id: 'mm_12', materialId: 'mat_6', type: 'IN',  qty: 100, comment: 'Начальный склад',            actor: 'И.Беляев', createdAt: now(7)  },
-  { id: 'mm_13', materialId: 'mat_7', type: 'IN',  qty: 50,  comment: 'Начальный склад',            actor: 'И.Беляев', createdAt: now(7)  },
-]
+  fetch: async () => {
+    set({ loading: true })
+    try {
+      const res = await materialsApi.list({ limit: 500 })
+      const materials = res.items
+      // fetch stock for each material
+      const stockEntries = await Promise.all(
+        materials.map(async (m) => {
+          const qty = await materialsApi.getStock(m.id).catch(() => 0)
+          return [m.id, qty] as [string, number]
+        })
+      )
+      const stockMap: Record<string, number> = Object.fromEntries(stockEntries)
+      set({ materials, stockMap })
+    } finally {
+      set({ loading: false })
+    }
+  },
 
-export const useMaterialStore = create<MaterialState>()(
-  persist(
-    (set, get) => ({
-      materials: INIT_MATERIALS,
-      movements: INIT_MOVEMENTS,
+  getStock: (materialId) => get().stockMap[materialId] ?? 0,
 
-      getStock: (id) =>
-        get().movements
-          .filter((m) => m.materialId === id)
-          .reduce((s, m) => s + (m.type === 'IN' ? m.qty : -m.qty), 0),
+  getHistory: (materialId) =>
+    get().movements
+      .filter((m) => m.materialId === materialId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
 
-      getHistory: (id) =>
-        [...get().movements]
-          .filter((m) => m.materialId === id)
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  addMaterial: async (m) => {
+    const created = await materialsApi.create({ name: m.name, unit: m.unit, description: m.description })
+    set((s) => ({ materials: [created, ...s.materials] }))
+    return created
+  },
 
-      addMaterial: (m) => {
-        const mat: Material = { ...m, id: uid(), createdAt: new Date().toISOString() }
-        set((s) => ({ materials: [mat, ...s.materials] }))
-        return mat
+  updateMaterial: async (id, patch) => {
+    const updated = await materialsApi.update(id, patch)
+    set((s) => ({ materials: s.materials.map((m) => (m.id === id ? updated : m)) }))
+  },
+
+  removeMaterial: async (id) => {
+    await materialsApi.delete(id)
+    set((s) => ({ materials: s.materials.filter((m) => m.id !== id) }))
+  },
+
+  addMovement: async (materialId, type, qty, comment, _actor) => {
+    const created = await materialsApi.addMovement(materialId, { type, qty, comment })
+    const mv = mapMov(created)
+    set((s) => ({
+      movements: [mv, ...s.movements],
+      stockMap: {
+        ...s.stockMap,
+        [materialId]: (s.stockMap[materialId] ?? 0) + (type === 'IN' ? qty : -qty),
       },
-
-      updateMaterial: (id, patch) =>
-        set((s) => ({ materials: s.materials.map((m) => (m.id === id ? { ...m, ...patch } : m)) })),
-
-      removeMaterial: (id) =>
-        set((s) => ({ materials: s.materials.filter((m) => m.id !== id) })),
-
-      addMovement: (materialId, type, qty, comment, actor) => {
-        const mv: MaterialMovement = {
-          id: uid(), materialId, type, qty, comment, actor,
-          createdAt: new Date().toISOString(),
-        }
-        set((s) => ({ movements: [mv, ...s.movements] }))
-      },
-    }),
-    { name: 'bof-materials' },
-  ),
-)
+    }))
+  },
+}))

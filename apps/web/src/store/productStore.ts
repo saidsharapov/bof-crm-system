@@ -1,5 +1,10 @@
+/**
+ * productStore — thin wrapper kept for backwards compatibility.
+ * All data now comes from the real API via productsApi.
+ * Pages that import this store should be migrated to call productsApi directly.
+ */
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { productsApi } from '../api/products'
 
 export interface Product {
   id: string
@@ -9,109 +14,63 @@ export interface Product {
   color: string
   colorHex: string
   description: string
-  photo: string        // '' | data:image/... | https://...
+  photo: string        // maps from photoUrl
   createdAt: string
 }
 
 interface ProductState {
   products: Product[]
-  add: (p: Omit<Product, 'id' | 'createdAt'>) => Product
-  update: (id: string, p: Partial<Omit<Product, 'id' | 'createdAt'>>) => void
-  remove: (id: string) => void
+  loading: boolean
+  fetch: () => Promise<void>
+  add: (p: Omit<Product, 'id' | 'createdAt'>) => Promise<Product>
+  update: (id: string, p: Partial<Omit<Product, 'id' | 'createdAt'>>) => Promise<void>
+  remove: (id: string) => Promise<void>
 }
 
-function uid() {
-  return `p_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+function mapProduct(p: { id: string; name: string; article: string; size: string; color: string; colorHex: string; description: string; photoUrl?: string; photo?: string; createdAt: string }): Product {
+  return { ...p, photo: p.photoUrl ?? p.photo ?? '' }
 }
 
-const INITIAL: Product[] = [
-  {
-    id: 'p_init_1',
-    name: 'Футболка базовая',
-    article: 'FBZ-M-WHT',
-    size: 'M',
-    color: 'Белый',
-    colorHex: '#FFFFFF',
-    description: 'Классическая футболка из 100% хлопка. Плотность 180 г/м².',
-    photo: '',
-    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-  },
-  {
-    id: 'p_init_2',
-    name: 'Футболка базовая',
-    article: 'FBZ-L-BLK',
-    size: 'L',
-    color: 'Чёрный',
-    colorHex: '#1a1a1a',
-    description: 'Классическая футболка из 100% хлопка. Плотность 180 г/м².',
-    photo: '',
-    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-  },
-  {
-    id: 'p_init_3',
-    name: 'Худи оверсайз',
-    article: 'HOV-XL-GRY',
-    size: 'XL',
-    color: 'Серый',
-    colorHex: '#9ca3af',
-    description: 'Худи оверсайз из флиса. Кенгуру-карман, капюшон.',
-    photo: '',
-    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-  },
-  {
-    id: 'p_init_4',
-    name: 'Поло корпоративное',
-    article: 'POL-M-NVY',
-    size: 'M',
-    color: 'Тёмно-синий',
-    colorHex: '#1e3a5f',
-    description: 'Поло пике 220 г/м², воротник-стойка, 3 пуговицы.',
-    photo: '',
-    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-  },
-  {
-    id: 'p_init_5',
-    name: 'Футболка принт',
-    article: 'FPR-S-RED',
-    size: 'S',
-    color: 'Красный',
-    colorHex: '#ef4444',
-    description: 'Футболка с принтом под нанесение. Хлопок 160 г/м².',
-    photo: '',
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-  {
-    id: 'p_init_6',
-    name: 'Худи оверсайз',
-    article: 'HOV-M-BLK',
-    size: 'M',
-    color: 'Чёрный',
-    colorHex: '#1a1a1a',
-    description: 'Худи оверсайз из флиса. Кенгуру-карман, капюшон.',
-    photo: '',
-    createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
-  },
-]
+export const useProductStore = create<ProductState>()((set) => ({
+  products: [],
+  loading: false,
 
-export const useProductStore = create<ProductState>()(
-  persist(
-    (set) => ({
-      products: INITIAL,
+  fetch: async () => {
+    set({ loading: true })
+    try {
+      const res = await productsApi.list({ limit: 500 })
+      set({ products: res.items.map(mapProduct) })
+    } finally {
+      set({ loading: false })
+    }
+  },
 
-      add: (p) => {
-        const product: Product = { ...p, id: uid(), createdAt: new Date().toISOString() }
-        set((s) => ({ products: [product, ...s.products] }))
-        return product
-      },
+  add: async (p) => {
+    const created = await productsApi.create({
+      name: p.name,
+      article: p.article,
+      size: p.size,
+      color: p.color,
+      colorHex: p.colorHex,
+      description: p.description,
+      photoUrl: p.photo || undefined,
+    })
+    const product = mapProduct(created)
+    set((s) => ({ products: [product, ...s.products] }))
+    return product
+  },
 
-      update: (id, patch) =>
-        set((s) => ({
-          products: s.products.map((p) => (p.id === id ? { ...p, ...patch } : p)),
-        })),
+  update: async (id, patch) => {
+    const updated = await productsApi.update(id, {
+      ...patch,
+      photoUrl: patch.photo || undefined,
+    })
+    const product = mapProduct(updated)
+    set((s) => ({ products: s.products.map((p) => (p.id === id ? product : p)) }))
+  },
 
-      remove: (id) =>
-        set((s) => ({ products: s.products.filter((p) => p.id !== id) })),
-    }),
-    { name: 'bof-products' },
-  ),
-)
+  remove: async (id) => {
+    await productsApi.delete(id)
+    set((s) => ({ products: s.products.filter((p) => p.id !== id) }))
+  },
+}))

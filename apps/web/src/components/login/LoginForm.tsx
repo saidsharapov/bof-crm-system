@@ -15,7 +15,6 @@ import {
   ShieldCheck,
 } from '@phosphor-icons/react'
 import clsx from 'clsx'
-import { loginRequest } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 
 // ── Validation schema ───────────────────────────────────────────────────────
@@ -130,21 +129,21 @@ export default function LoginForm({ variant = 'dark' }: LoginFormProps) {
   const loginId    = useId()
   const passwordId = useId()
   const navigate   = useNavigate()
-  const setAuth    = useAuthStore((s) => s.setAuth)
+  const authLogin  = useAuthStore((s) => s.login)
   const isLight    = variant === 'light'
 
   const [showPass, setShowPass] = useState(false)
   const [shaking,  setShaking]  = useState(false)
-  const [credHint, setCredHint] = useState(false)
+
 
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
 
   const mutation = useMutation({
-    mutationFn: loginRequest,
-    onSuccess: ({ access_token, user }) => {
-      setAuth(access_token, user)
+    mutationFn: ({ login, password }: { login: string; password: string }) =>
+      authLogin(login, password),
+    onSuccess: () => {
       navigate('/dashboard', { replace: true })
     },
     onError: (err: Error & { response?: { status?: number } }) => {
@@ -157,13 +156,11 @@ export default function LoginForm({ variant = 'dark' }: LoginFormProps) {
             : 'Ошибка сервера. Попробуйте ещё раз'
       setError('root', { message: msg })
       setShaking(true)
-      setCredHint(status === 401)
       setTimeout(() => setShaking(false), 500)
     },
   })
 
   const onSubmit = (data: FormData) => {
-    setCredHint(false)
     mutation.mutate(data)
   }
 
@@ -241,11 +238,6 @@ export default function LoginForm({ variant = 'dark' }: LoginFormProps) {
           <div>
             <p className="text-sm" style={{ color: isLight ? 'var(--danger-fg)' : undefined }} >{errors.root.message}</p>
             {!isLight && <p className="text-xs text-red-300">{errors.root.message}</p>}
-            {credHint && (
-              <p className="mt-1 text-xs" style={{ color: isLight ? 'var(--text-tertiary)' : 'rgba(255,255,255,0.3)' }}>
-                Подсказка: admin / admin123 · manager / manager123
-              </p>
-            )}
           </div>
         </div>
       )}

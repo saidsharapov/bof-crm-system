@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import clsx from 'clsx'
 import { z } from 'zod'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
@@ -12,7 +12,6 @@ import { formatUZS, formatDeadline, getDeadlineStatus, toDatetimeLocal } from '@
 import { useOrderSourceStore } from '@/store/orderSourceStore'
 import { useProductStore } from '@/store/productStore'
 import { useStockStore }   from '@/store/stockStore'
-import { useAuthStore }   from '@/store/authStore'
 import { SearchSelect }    from '@/components/ui/SearchSelect'
 import { ProductAvatar }   from '@/components/products/ProductAvatar'
 import { NumberInput }     from '@/components/ui/NumberInput'
@@ -575,8 +574,6 @@ function KanbanCardEl({
 
 function KanbanView({ onEdit }: { onEdit: (o: Order) => void }) {
   const { orders, setStatus } = useOrderStore()
-  const { addMovement } = useStockStore()
-  const { user } = useAuthStore()
   const drag = useRef<DragState | null>(null)
   const [activeCol, setActiveCol] = useState<string | null>(null)
   const boardRef = useRef<HTMLDivElement>(null)
@@ -644,27 +641,13 @@ function KanbanView({ onEdit }: { onEdit: (o: Order) => void }) {
       const newStatus = col as OrderStatus
 
       if (order && order.status !== newStatus) {
-        const actor = user?.name ?? 'CRM'
-
-        if (newStatus === 'DELIVERED' && order.status !== 'DELIVERED') {
-          // Перевод в «Доставлен» — списываем со склада
-          order.items.forEach((item) => {
-            addMovement(item.productId, 'OUT', item.qty, `Отгрузка заказ ${order.num}`, actor)
-          })
-        } else if (order.status === 'DELIVERED' && newStatus !== 'DELIVERED') {
-          // Уход с «Доставлен» (возврат/отмена) — возвращаем на склад
-          order.items.forEach((item) => {
-            addMovement(item.productId, 'IN', item.qty, `Возврат заказ ${order.num}`, actor)
-          })
-        }
-
         setStatus(orderId, newStatus)
       }
     }
 
     drag.current = null
     setActiveCol(null)
-  }, [orders, setStatus, addMovement, user])
+  }, [orders, setStatus])
 
   return (
     <div
@@ -746,24 +729,34 @@ type ViewMode = 'list' | 'kanban'
 type SheetState = { type: 'none' } | { type: 'create' } | { type: 'edit'; order: Order }
 
 export function OrdersPage() {
-  const { orders, createOrder, updateOrder, removeOrder } = useOrderStore()
+  const { orders, createOrder, updateOrder, removeOrder, fetch: fetchOrders } = useOrderStore()
+  const { fetch: fetchProducts } = useProductStore()
+  const { fetchStock } = useStockStore()
+  const { fetch: fetchSources } = useOrderSourceStore()
   const [view,  setView]  = useState<ViewMode>('list')
   const [sheet, setSheet] = useState<SheetState>({ type: 'none' })
 
-  function handleSave(data: FormData) {
+  useEffect(() => {
+    fetchOrders()
+    fetchProducts()
+    fetchStock()
+    fetchSources()
+  }, [])
+
+  async function handleSave(data: FormData) {
     const deadlineISO = data.deadline ? new Date(data.deadline).toISOString() : undefined
-    const payload = { ...data, deadline: deadlineISO }
+    const payload = { ...data, source: data.source || undefined, deadline: deadlineISO }
     if (sheet.type === 'create') {
-      createOrder(payload as Parameters<typeof createOrder>[0])
+      await createOrder(payload as Parameters<typeof createOrder>[0])
     } else if (sheet.type === 'edit') {
-      updateOrder(sheet.order.id, payload as Parameters<typeof updateOrder>[1])
+      await updateOrder(sheet.order.id, payload as Parameters<typeof updateOrder>[1])
     }
     setSheet({ type: 'none' })
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (sheet.type === 'edit') {
-      removeOrder(sheet.order.id)
+      await removeOrder(sheet.order.id)
       setSheet({ type: 'none' })
     }
   }

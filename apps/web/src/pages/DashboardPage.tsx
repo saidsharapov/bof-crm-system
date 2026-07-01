@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Bell, SignOut, Gear } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-import { KpiCards }        from '@/components/dashboard/KpiCards'
+import { dashboardApi, type DashboardData } from '@/api/dashboard'
+import { buildKpiMetrics, KpiCards } from '@/components/dashboard/KpiCards'
 import { QuickActions }    from '@/components/dashboard/QuickActions'
 import { WeeklyChart }     from '@/components/dashboard/WeeklyChart'
 import { RecentMovements } from '@/components/dashboard/RecentMovements'
@@ -120,6 +121,11 @@ export function DashboardPage() {
   const { user, logout } = useAuthStore()
   const navigate         = useNavigate()
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [data, setData] = useState<DashboardData | null>(null)
+
+  useEffect(() => {
+    dashboardApi.getStats().then(setData).catch(() => {/* keep null */})
+  }, [])
 
   if (!user) return null
 
@@ -220,15 +226,17 @@ export function DashboardPage() {
         </section>
 
         {/* KPI */}
-        <section>
-          <p className="m-label" style={{ marginBottom: 12 }}>Показатели</p>
-          <KpiCards role={user.role} />
-        </section>
+        {data && (
+          <section>
+            <p className="m-label" style={{ marginBottom: 12 }}>Показатели</p>
+            <KpiCards role={user.role} metrics={buildKpiMetrics(data.kpi)} />
+          </section>
+        )}
 
         <QuickActions role={user.role} />
-        {SHOW_CHART     && <WeeklyChart />}
-        {SHOW_WAREHOUSE && <RecentMovements />}
-        {SHOW_ORDERS    && <ActiveOrders />}
+        {SHOW_CHART     && data && <WeeklyChart data={data.chart} />}
+        {SHOW_WAREHOUSE && data && <RecentMovements movements={data.recentMovements} />}
+        {SHOW_ORDERS    && data && <ActiveOrders orders={data.recentOrders} />}
 
       </main>
 

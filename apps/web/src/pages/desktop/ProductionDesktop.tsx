@@ -1,9 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Trash, Calculator, CheckCircle } from '@phosphor-icons/react'
 import { useMaterialStore } from '@/store/materialStore'
 import { useProductStore }  from '@/store/productStore'
-import { useStockStore }    from '@/store/stockStore'
-import { useAuthStore }     from '@/store/authStore'
+import { productionApi }    from '@/api/production'
 import { SearchSelect }     from '@/components/ui/SearchSelect'
 import { NumberInput }      from '@/components/ui/NumberInput'
 
@@ -246,9 +245,13 @@ function ProductRowDesktop({ row, index, onChange, onRemove }: {
 
 // ── ProductionDesktop ─────────────────────────────────────────────────────────
 export function ProductionDesktop() {
-  const { addMovement: addStockMovement } = useStockStore()
-  const { addMovement: addMaterialMovement, getStock: getMaterialStock } = useMaterialStore()
-  const { user } = useAuthStore()
+  const { getStock: getMaterialStock, fetch: fetchMaterials } = useMaterialStore()
+  const { fetch: fetchProducts } = useProductStore()
+
+  useEffect(() => {
+    fetchMaterials()
+    fetchProducts()
+  }, [])
 
   const [materialRows, setMaterialRows] = useState<MaterialRow[]>([
     { materialId: '', qty: 0, normPerUnit: 0, calcOpen: false },
@@ -260,7 +263,6 @@ export function ProductionDesktop() {
   const [errors, setErrors]       = useState<string[]>([])
 
   const totalUnits = productRows.reduce((sum, r) => sum + (r.qty || 0), 0)
-  const actorName  = user?.name ?? 'Цех'
 
   const hasOver = materialRows.some((r) => {
     if (!r.materialId || r.qty <= 0) return false
@@ -308,14 +310,18 @@ export function ProductionDesktop() {
     }
     if (errs.length > 0) { setErrors([...new Set(errs)]); return }
     setErrors([])
-    for (const r of materialRows) addMaterialMovement(r.materialId, 'OUT', r.qty, 'Производство', actorName)
-    for (const r of productRows)  addStockMovement(r.productId, 'IN', r.qty, 'Производство', actorName)
-    setSubmitted(true)
-    setTimeout(() => {
-      setSubmitted(false)
-      setMaterialRows([{ materialId: '', qty: 0, normPerUnit: 0, calcOpen: false }])
-      setProductRows([{ productId: '', qty: 0 }])
-    }, 3000)
+    productionApi.create({
+      notes: 'Производство',
+      materials: materialRows.map((r) => ({ materialId: r.materialId, qty: r.qty })),
+      products:  productRows.map((r)  => ({ productId: r.productId,  qty: r.qty  })),
+    }).then(() => {
+      setSubmitted(true)
+      setTimeout(() => {
+        setSubmitted(false)
+        setMaterialRows([{ materialId: '', qty: 0, normPerUnit: 0, calcOpen: false }])
+        setProductRows([{ productId: '', qty: 0 }])
+      }, 3000)
+    }).catch(() => setErrors(['Ошибка при сохранении. Проверьте соединение с сервером.']))
   }
 
   function handleReset() {

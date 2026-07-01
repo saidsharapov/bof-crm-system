@@ -1,5 +1,9 @@
+/**
+ * userManagementStore — thin wrapper kept for backwards compatibility.
+ * All data now comes from the real API via usersApi.
+ */
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { usersApi, type AppUser as ApiUser } from '../api/users'
 import type { UserRole } from './authStore'
 
 export interface AppUser {
@@ -7,77 +11,81 @@ export interface AppUser {
   login: string
   name: string
   role: UserRole
-  password: string
+  password?: string
   createdAt: string
   active: boolean
 }
 
 interface UserManagementState {
   users: AppUser[]
-  addUser: (u: Omit<AppUser, 'id' | 'createdAt'>) => AppUser
-  updateUser: (id: string, patch: Partial<Omit<AppUser, 'id' | 'createdAt'>>) => void
-  removeUser: (id: string) => void
-  changePassword: (id: string, newPassword: string) => void
-  verifyPassword: (login: string, password: string) => AppUser | null
+  loading: boolean
+  fetch: () => Promise<void>
+  addUser: (u: Omit<AppUser, 'id' | 'createdAt'>) => Promise<AppUser>
+  updateUser: (id: string, patch: Partial<Omit<AppUser, 'id' | 'createdAt'>>) => Promise<void>
+  removeUser: (id: string) => Promise<void>
+  changePassword: (id: string, newPassword: string) => Promise<void>
+  verifyPassword: (login: string, password: string) => null
 }
 
-function uid() { return `u_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` }
+function mapUser(u: ApiUser): AppUser {
+  return {
+    id: u.id,
+    login: u.login,
+    name: u.name,
+    role: u.role,
+    createdAt: u.createdAt,
+    active: u.active ?? true,
+  }
+}
 
-const INITIAL_USERS: AppUser[] = [
-  {
-    id:       'u_admin',
-    login:    'admin',
-    name:     'Алексей Морозов',
-    role:     'ADMIN',
-    password: 'admin123',
-    createdAt: new Date('2024-01-01').toISOString(),
-    active:   true,
+export const useUserManagementStore = create<UserManagementState>()((set, _get) => ({
+  users: [],
+  loading: false,
+
+  fetch: async () => {
+    set({ loading: true })
+    try {
+      const users = await usersApi.list()
+      set({ users: users.map(mapUser) })
+    } finally {
+      set({ loading: false })
+    }
   },
-  {
-    id:       'u_manager',
-    login:    'manager',
-    name:     'Дарья Соколова',
-    role:     'MANAGER',
-    password: 'manager123',
-    createdAt: new Date('2024-01-15').toISOString(),
-    active:   true,
+
+  addUser: async (u) => {
+    const created = await usersApi.create({
+      login: u.login,
+      name: u.name,
+      password: u.password ?? '',
+      role: u.role,
+    })
+    const user = mapUser(created)
+    set((s) => ({ users: [...s.users, user] }))
+    return user
   },
-  {
-    id:       'u_sklad',
-    login:    'sklad',
-    name:     'Игорь Беляев',
-    role:     'WAREHOUSE',
-    password: 'sklad123',
-    createdAt: new Date('2024-02-01').toISOString(),
-    active:   true,
+
+  updateUser: async (id, patch) => {
+    const updated = await usersApi.update(id, {
+      name: patch.name,
+      login: patch.login,
+      role: patch.role,
+      active: patch.active,
+      ...(patch.password ? { password: patch.password } : {}),
+    })
+    const user = mapUser(updated)
+    set((s) => ({ users: s.users.map((u) => (u.id === id ? user : u)) }))
   },
-]
 
-export const useUserManagementStore = create<UserManagementState>()(
-  persist(
-    (set, get) => ({
-      users: INITIAL_USERS,
+  removeUser: async (id) => {
+    await usersApi.delete(id)
+    set((s) => ({ users: s.users.filter((u) => u.id !== id) }))
+  },
 
-      addUser: (u) => {
-        const user: AppUser = { ...u, id: uid(), createdAt: new Date().toISOString() }
-        set((s) => ({ users: [...s.users, user] }))
-        return user
-      },
+  changePassword: async (_id, _newPassword) => {
+    // Password change via /auth/change-password is handled directly in SettingsPage
+    // This method is kept for interface compatibility but no-ops here
+  },
 
-      updateUser: (id, patch) =>
-        set((s) => ({ users: s.users.map((u) => (u.id === id ? { ...u, ...patch } : u)) })),
-
-      removeUser: (id) =>
-        set((s) => ({ users: s.users.filter((u) => u.id !== id) })),
-
-      changePassword: (id, newPassword) =>
-        set((s) => ({ users: s.users.map((u) => (u.id === id ? { ...u, password: newPassword } : u)) })),
-
-      verifyPassword: (login, password) => {
-        const u = get().users.find((u) => u.login.toLowerCase() === login.toLowerCase())
-        return u && u.password === password ? u : null
-      },
-    }),
-    { name: 'bof-users' },
-  ),
-)
+  // No longer needed with real API - always returns null
+  verifyPassword: (_login, _password) => null,
+}))

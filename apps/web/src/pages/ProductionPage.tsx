@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus, Minus, Factory, CheckCircle, WarningCircle,
   Trash, Calculator, ArrowRight,
@@ -6,8 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useMaterialStore } from '@/store/materialStore'
 import { useProductStore }  from '@/store/productStore'
-import { useStockStore }    from '@/store/stockStore'
-import { useAuthStore }     from '@/store/authStore'
+import { productionApi }    from '@/api/production'
 import { ProductAvatar }    from '@/components/products/ProductAvatar'
 import { PageHeader }       from '@/components/ui/PageHeader'
 import { NumberInput }      from '@/components/ui/NumberInput'
@@ -328,9 +327,13 @@ function SuccessScreen({ onDone }: { onDone: () => void }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function ProductionPage() {
   const navigate = useNavigate()
-  const { addMovement: addMatMv, getStock: getMatStock } = useMaterialStore()
-  const { addMovement: addProdMv } = useStockStore()
-  const { user } = useAuthStore()
+  const { fetch: fetchMaterials, getStock: getMatStock } = useMaterialStore()
+  const { fetch: fetchProducts } = useProductStore()
+
+  useEffect(() => {
+    fetchMaterials()
+    fetchProducts()
+  }, [])
 
   const [materialLines, setMaterialLines] = useState<MaterialLine[]>([{ materialId: '', qty: 1 }])
   const [productLines,  setProductLines]  = useState<ProductLine[]>([{ productId: '', qty: 1 }])
@@ -367,22 +370,28 @@ export function ProductionPage() {
     return null
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const err = validate()
     if (err) { setError(err); return }
     setError('')
 
-    const actor = user?.name ?? 'Пользователь'
-    const note  = comment || `Производство ${new Date().toLocaleDateString('ru-RU')}`
+    const note = comment || `Производство ${new Date().toLocaleDateString('ru-RU')}`
 
-    for (const l of materialLines.filter((l) => l.materialId)) {
-      addMatMv(l.materialId, 'OUT', l.qty, note, actor)
+    try {
+      await productionApi.create({
+        notes: note,
+        materials: materialLines
+          .filter((l) => l.materialId && l.qty > 0)
+          .map((l) => ({ materialId: l.materialId, qty: l.qty })),
+        products: productLines
+          .filter((l) => l.productId && l.qty > 0)
+          .map((l) => ({ productId: l.productId, qty: l.qty })),
+      })
+      setDone(true)
+    } catch {
+      setError('Ошибка при отправке. Попробуйте ещё раз.')
     }
-    for (const l of productLines.filter((l) => l.productId)) {
-      addProdMv(l.productId, 'IN', l.qty, note, actor)
-    }
-    setDone(true)
   }
 
   if (done) return <SuccessScreen onDone={() => navigate('/warehouse')} />

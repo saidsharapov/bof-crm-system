@@ -1,7 +1,65 @@
 import { memo } from 'react'
 import { ArrowUp, ArrowDown } from '@phosphor-icons/react'
-import { KPI_METRICS, type KpiMetric } from '@/mock/dashboard'
 import type { UserRole } from '@/store/authStore'
+import type { DashboardKpi } from '@/api/dashboard'
+
+// ── KpiMetric shape ───────────────────────────────────────────────────────────
+export interface KpiMetric {
+  id: string
+  label: string
+  value: string
+  subValue?: string
+  trend: number[]
+  delta: number
+  color: 'brand' | 'emerald' | 'amber' | 'rose'
+  roles: UserRole[]
+}
+
+// ── Build KPI metrics from API data ──────────────────────────────────────────
+export function buildKpiMetrics(kpi: DashboardKpi): KpiMetric[] {
+  return [
+    {
+      id: 'orders',
+      label: 'Заказов сегодня',
+      value: String(kpi.ordersToday),
+      subValue: `из ${kpi.ordersWeek} за неделю`,
+      trend: [0, 0, 0, 0, 0, 0, kpi.ordersToday],
+      delta: 0,
+      color: 'brand',
+      roles: ['ADMIN', 'MANAGER'],
+    },
+    {
+      id: 'revenue',
+      label: 'Выручка за неделю',
+      value: `${kpi.revenueWeek.toLocaleString('ru-RU')} UZS`,
+      subValue: `${kpi.ordersActive} активных`,
+      trend: [0, 0, 0, 0, 0, 0, kpi.revenueWeek],
+      delta: 0,
+      color: 'emerald',
+      roles: ['ADMIN', 'MANAGER'],
+    },
+    {
+      id: 'stock',
+      label: 'Мало остатков',
+      value: String(kpi.lowStockCount),
+      subValue: 'позиций с низким остатком',
+      trend: [0, 0, 0, 0, 0, 0, kpi.lowStockCount],
+      delta: 0,
+      color: 'amber',
+      roles: ['ADMIN', 'WAREHOUSE'],
+    },
+    {
+      id: 'active',
+      label: 'Активных заказов',
+      value: String(kpi.ordersActive),
+      subValue: `${kpi.ordersWeek} за неделю`,
+      trend: [0, 0, 0, 0, 0, 0, kpi.ordersActive],
+      delta: 0,
+      color: 'rose',
+      roles: ['ADMIN', 'WAREHOUSE'],
+    },
+  ]
+}
 
 // ── Tiny SVG sparkline ────────────────────────────────────────────────────────
 function Sparkline({ data, color }: { data: number[]; color: KpiMetric['color'] }) {
@@ -86,8 +144,8 @@ function KpiCard({ metric, delay }: { metric: KpiMetric; delay: string }) {
 }
 
 // ── Exported strip ────────────────────────────────────────────────────────────
-export const KpiCards = memo(function KpiCards({ role }: { role: UserRole }) {
-  const visible = KPI_METRICS.filter((m) => m.roles.includes(role))
+export const KpiCards = memo(function KpiCards({ role, metrics }: { role: UserRole; metrics: KpiMetric[] }) {
+  const visible = metrics.filter((m) => m.roles.includes(role))
   return (
     <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4, margin: '0 -16px', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
       {visible.map((m, i) => (

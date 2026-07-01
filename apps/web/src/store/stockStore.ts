@@ -1,5 +1,9 @@
+/**
+ * stockStore — thin wrapper kept for backwards compatibility.
+ * All data now comes from the real API via warehouseApi.
+ */
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { warehouseApi, type WarehouseMovement } from '../api/warehouse'
 
 export type MovementType = 'IN' | 'OUT'
 
@@ -15,9 +19,11 @@ export interface Movement {
 
 interface StockState {
   movements: Movement[]
-  /** Source of truth: balance per productId */
+  stockMap: Record<string, number>
+  loading: boolean
+  fetchStock: () => Promise<void>
+  fetchMovements: (productId?: string) => Promise<void>
   getStock: (productId: string) => number
-  /** All movements for a product, newest first */
   getHistory: (productId: string) => Movement[]
   addMovement: (
     productId: string,
@@ -25,66 +31,62 @@ interface StockState {
     qty: number,
     comment: string,
     actor: string,
-  ) => void
+  ) => Promise<void>
 }
 
-function uid() {
-  return `mv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+function mapMovement(m: WarehouseMovement): Movement {
+  return {
+    id: m.id,
+    productId: m.productId,
+    type: m.type,
+    qty: m.qty,
+    comment: m.comment ?? '',
+    actor: m.actor ?? '',
+    createdAt: m.createdAt,
+  }
 }
 
-const now = (offsetDays = 0) =>
-  new Date(Date.now() - offsetDays * 86400000).toISOString()
+export const useStockStore = create<StockState>()((set, get) => ({
+  movements: [],
+  stockMap: {},
+  loading: false,
 
-const INITIAL: Movement[] = [
-  // p_init_1 — Футболка M Белый
-  { id: 'mv_i01', productId: 'p_init_1', type: 'IN',  qty: 100, comment: 'Начальный приход',          actor: 'И.Беляев',   createdAt: now(6) },
-  { id: 'mv_i02', productId: 'p_init_1', type: 'OUT', qty: 15,  comment: 'Отгрузка заказ #0040',      actor: 'Д.Соколова', createdAt: now(4) },
-  { id: 'mv_i03', productId: 'p_init_1', type: 'OUT', qty: 5,   comment: 'Отгрузка заказ #0043',      actor: 'Д.Соколова', createdAt: now(1) },
-  // p_init_2 — Футболка L Чёрный
-  { id: 'mv_i04', productId: 'p_init_2', type: 'IN',  qty: 80,  comment: 'Начальный приход',          actor: 'И.Беляев',   createdAt: now(6) },
-  { id: 'mv_i05', productId: 'p_init_2', type: 'OUT', qty: 30,  comment: 'Отгрузка заказ #0041',      actor: 'Д.Соколова', createdAt: now(3) },
-  { id: 'mv_i06', productId: 'p_init_2', type: 'IN',  qty: 50,  comment: 'Доп. приход от цеха',       actor: 'Цех',        createdAt: now(2) },
-  // p_init_3 — Худи XL Серый
-  { id: 'mv_i07', productId: 'p_init_3', type: 'IN',  qty: 40,  comment: 'Начальный приход',          actor: 'И.Беляев',   createdAt: now(5) },
-  { id: 'mv_i08', productId: 'p_init_3', type: 'OUT', qty: 12,  comment: 'Отгрузка заказ #0042',      actor: 'Д.Соколова', createdAt: now(2) },
-  // p_init_4 — Поло M Тёмно-синий
-  { id: 'mv_i09', productId: 'p_init_4', type: 'IN',  qty: 60,  comment: 'Начальный приход',          actor: 'И.Беляев',   createdAt: now(3) },
-  { id: 'mv_i10', productId: 'p_init_4', type: 'OUT', qty: 60,  comment: 'Отгрузка заказ #0044 (весь)', actor: 'Д.Соколова', createdAt: now(1) },
-  // p_init_5 — Футболка S Красный
-  { id: 'mv_i11', productId: 'p_init_5', type: 'IN',  qty: 20,  comment: 'Начальный приход',          actor: 'Цех',        createdAt: now(2) },
-  // p_init_6 — Худи M Чёрный
-  { id: 'mv_i12', productId: 'p_init_6', type: 'IN',  qty: 35,  comment: 'Начальный приход',          actor: 'И.Беляев',   createdAt: now(1) },
-  { id: 'mv_i13', productId: 'p_init_6', type: 'OUT', qty: 5,   comment: 'Отгрузка заказ #0046',      actor: 'Д.Соколова', createdAt: now(0) },
-]
+  fetchStock: async () => {
+    set({ loading: true })
+    try {
+      const res = await warehouseApi.getStock({ limit: 500 })
+      const stockMap: Record<string, number> = {}
+      for (const item of res.items) {
+        stockMap[item.id] = item.stock
+      }
+      set({ stockMap })
+    } finally {
+      set({ loading: false })
+    }
+  },
 
-export const useStockStore = create<StockState>()(
-  persist(
-    (set, get) => ({
-      movements: INITIAL,
+  fetchMovements: async (productId?: string) => {
+    const res = await warehouseApi.getMovements({ productId, limit: 500 })
+    const movements = res.items.map(mapMovement)
+    set({ movements })
+  },
 
-      getStock: (productId) =>
-        get().movements
-          .filter((m) => m.productId === productId)
-          .reduce((sum, m) => sum + (m.type === 'IN' ? m.qty : -m.qty), 0),
+  getStock: (productId) => get().stockMap[productId] ?? 0,
 
-      getHistory: (productId) =>
-        [...get().movements]
-          .filter((m) => m.productId === productId)
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  getHistory: (productId) =>
+    get().movements
+      .filter((m) => m.productId === productId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
 
-      addMovement: (productId, type, qty, comment, actor) => {
-        const mv: Movement = {
-          id: uid(),
-          productId,
-          type,
-          qty,
-          comment,
-          actor,
-          createdAt: new Date().toISOString(),
-        }
-        set((s) => ({ movements: [mv, ...s.movements] }))
+  addMovement: async (productId, type, qty, comment, _actor) => {
+    const created = await warehouseApi.addMovement({ productId, type, qty, comment })
+    const mv = mapMovement(created)
+    set((s) => ({
+      movements: [mv, ...s.movements],
+      stockMap: {
+        ...s.stockMap,
+        [productId]: (s.stockMap[productId] ?? 0) + (type === 'IN' ? qty : -qty),
       },
-    }),
-    { name: 'bof-stock' },
-  ),
-)
+    }))
+  },
+}))

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -12,6 +12,7 @@ import {
 import { useAuthStore, type UserRole } from '@/store/authStore'
 import { useUserManagementStore, type AppUser } from '@/store/userManagementStore'
 import { useThemeStore } from '@/store/themeStore'
+import { usersApi } from '@/api/users'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { PageHeader }  from '@/components/ui/PageHeader'
 
@@ -74,22 +75,21 @@ const pwSchema = z.object({
 type PwForm = z.infer<typeof pwSchema>
 
 function ChangePasswordSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { user }   = useAuthStore()
-  const { users, changePassword, verifyPassword } = useUserManagementStore()
-  const [ok, setOk]   = useState(false)
+  const [ok, setOk] = useState(false)
 
   const { register, handleSubmit, setError, reset, formState: { errors } } = useForm<PwForm>({
     resolver: zodResolver(pwSchema),
   })
 
-  function onSubmit(data: PwForm) {
-    const valid = verifyPassword(user?.login ?? '', data.current)
-    if (!valid) { setError('current', { message: 'Неверный текущий пароль' }); return }
-    const me = users.find((u) => u.login === user?.login)
-    if (me) changePassword(me.id, data.next)
-    setOk(true)
-    reset()
-    setTimeout(() => { setOk(false); onClose() }, 1500)
+  async function onSubmit(data: PwForm) {
+    try {
+      await usersApi.changePassword(data.current, data.next)
+      setOk(true)
+      reset()
+      setTimeout(() => { setOk(false); onClose() }, 1500)
+    } catch {
+      setError('current', { message: 'Неверный текущий пароль' })
+    }
   }
 
   return (
@@ -155,9 +155,9 @@ function UserSheet({
 
   const watchRole = watch('role')
 
-  function onSubmit(data: UserForm) {
+  async function onSubmit(data: UserForm) {
     if (initial) {
-      updateUser(initial.id, {
+      await updateUser(initial.id, {
         name:   data.name,
         login:  data.login,
         role:   data.role,
@@ -165,7 +165,7 @@ function UserSheet({
         ...(data.password ? { password: data.password } : {}),
       })
     } else {
-      addUser({ ...data, active: true })
+      await addUser({ ...data, active: true })
     }
     onClose()
   }
@@ -250,7 +250,7 @@ function UserSheet({
                 border: '1px solid var(--border-subtle)', background: 'none',
                 fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)', cursor: 'pointer',
               }}>Нет</button>
-              <button type="button" onClick={() => { removeUser(initial.id); onClose() }} style={{
+              <button type="button" onClick={async () => { await removeUser(initial.id); onClose() }} style={{
                 flex: 1, padding: '10px 0', borderRadius: 'var(--radius-xl)',
                 border: 'none', background: 'var(--danger-solid)', color: '#fff',
                 fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
@@ -374,16 +374,20 @@ function SettingRow({
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function SettingsPage() {
   const { user, logout }    = useAuthStore()
-  const { users }           = useUserManagementStore()
+  const { users, fetch: fetchUsers } = useUserManagementStore()
   const { theme, toggle: toggleTheme } = useThemeStore()
   const navigate            = useNavigate()
   const [pwOpen,   setPwOpen]   = useState(false)
   const [userSheet, setUserSheet] = useState<{ open: boolean; user?: AppUser }>({ open: false })
 
+  const isAdmin = user?.role === 'ADMIN'
+  useEffect(() => {
+    if (isAdmin) fetchUsers()
+  }, [isAdmin])
+
   if (!user) return null
 
   const meta    = ROLE_META[user.role]
-  const isAdmin = user.role === 'ADMIN'
   const initials = user.name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()
 
   return (
@@ -490,7 +494,7 @@ export function SettingsPage() {
             {[
               ['Версия', 'v0.1.0'],
               ['Режим', 'PWA'],
-              ['Backend', 'Mock (без сервера)'],
+              ['Backend', 'NestJS REST API'],
             ].map(([k, v]) => (
               <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)' }}>
                 <span style={{ color: 'var(--text-tertiary)' }}>{k}</span>

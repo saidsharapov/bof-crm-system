@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Package, ArrowDown, ArrowUp, Clock, Warning,
 } from '@phosphor-icons/react'
@@ -13,7 +13,9 @@ import { EmptyState }      from '@/components/ui/EmptyState'
 
 // ── Movement history list ─────────────────────────────────────────────────────
 function MovementList({ productId }: { productId: string }) {
-  const history = useStockStore((s) => s.getHistory(productId))
+  const { fetchMovements, getHistory } = useStockStore()
+  useEffect(() => { fetchMovements(productId) }, [productId])
+  const history = getHistory(productId)
 
   if (history.length === 0) {
     return (
@@ -166,9 +168,14 @@ function StatsBar({ products, getStock }: { products: ReturnType<typeof useProdu
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function WarehousePage() {
-  const { products }    = useProductStore()
-  const { getStock } = useStockStore()
-  const navigate        = useNavigate()
+  const { products, fetch: fetchProducts } = useProductStore()
+  const { fetchStock, getStock } = useStockStore()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    fetchProducts()
+    fetchStock()
+  }, [])
 
   const [query,      setQuery]      = useState('')
   const [filterTab,  setFilterTab]  = useState<'all' | 'low' | 'empty'>('all')

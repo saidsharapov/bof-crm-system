@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  WAREHOUSE
+  MANAGER
+}
+
+enum MovementType {
+  IN
+  OUT
+  RESERVE
+  RELEASE
+  PRODUCE
+  SHIP
+  RETURN
+}
+
+enum OrderStatus {
+  NEW
+  IN_WORK
+  DELIVERING
+  DELIVERED
+  CANCELED
+}
+
+enum MaterialUnit {
+  KG
+  M
+  PCS
+  ROLL
+  SPOOL
+}
+
+model User {
+  id               String         @id @default(cuid())
+  login            String         @unique
+  password         String
+  name             String
+  role             Role           @default(MANAGER)
+  active           Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+  refreshTokens    RefreshToken[]
+  stockMovements   ProductMovement[]
+  materialMovements MaterialMovement[]
+  productions      Production[]
+  orders           Order[]        @relation("OrderCreator")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model Product {
+  id          String            @id @default(cuid())
+  name        String
+  article     String
+  size        String
+  color       String
+  colorHex    String
+  description String            @default("")
+  photoUrl    String            @default("")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  deletedAt   DateTime?
+  movements   ProductMovement[]
+  orderItems  OrderItem[]
+
+  @@map("products")
+}
+
+model ProductMovement {
+  id        String       @id @default(cuid())
+  productId String
+  product   Product      @relation(fields: [productId], references: [id])
+  type      MovementType
+  qty       Int
+  comment   String       @default("")
+  actorId   String?
+  actor     User?        @relation(fields: [actorId], references: [id])
+  actorName String       @default("")
+  orderId   String?
+  order     Order?       @relation(fields: [orderId], references: [id])
+  createdAt DateTime     @default(now())
+
+  @@map("product_movements")
+}
+
+model Material {
+  id          String             @id @default(cuid())
+  name        String
+  unit        String
+  description String             @default("")
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  deletedAt   DateTime?
+  movements   MaterialMovement[]
+  productionItems ProductionMaterial[]
+
+  @@map("materials")
+}
+
+model MaterialMovement {
+  id           String     @id @default(cuid())
+  materialId   String
+  material     Material   @relation(fields: [materialId], references: [id])
+  type         String     // IN | OUT
+  qty          Float
+  comment      String     @default("")
+  actorId      String?
+  actor        User?      @relation(fields: [actorId], references: [id])
+  actorName    String     @default("")
+  productionId String?
+  production   Production? @relation(fields: [productionId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@map("material_movements")
+}
+
+model OrderSource {
+  id        String   @id @default(cuid())
+  name      String
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+
+  @@map("order_sources")
+}
+
+model Order {
+  id          String          @id @default(cuid())
+  num         String          @unique
+  clientName  String
+  phone       String
+  address     String
+  comment     String          @default("")
+  sourceId    String?
+  source      OrderSource?    @relation(fields: [sourceId], references: [id])
+  deadline    DateTime?
+  status      OrderStatus     @default(NEW)
+  totalAmount Float           @default(0)
+  createdById String?
+  createdBy   User?           @relation("OrderCreator", fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?
+  items       OrderItem[]
+  movements   ProductMovement[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  qty       Int
+  price     Float   @default(0)
+
+  @@map("order_items")
+}
+
+model Production {
+  id        String               @id @default(cuid())
+  notes     String               @default("")
+  actorId   String?
+  actor     User?                @relation(fields: [actorId], references: [id])
+  actorName String               @default("")
+  createdAt DateTime             @default(now())
+  materials ProductionMaterial[]
+  products  ProductionProduct[]
+  materialMovements MaterialMovement[]
+
+  @@map("productions")
+}
+
+model ProductionMaterial {
+  id           String     @id @default(cuid())
+  productionId String
+  production   Production @relation(fields: [productionId], references: [id], onDelete: Cascade)
+  materialId   String
+  material     Material   @relation(fields: [materialId], references: [id])
+  qty          Float
+
+  @@map("production_materials")
+}
+
+model ProductionProduct {
+  id           String     @id @default(cuid())
+  productionId String
+  production   Production @relation(fields: [productionId], references: [id], onDelete: Cascade)
+  productId    String
+  qty          Int
+
+  @@map("production_products")
+}

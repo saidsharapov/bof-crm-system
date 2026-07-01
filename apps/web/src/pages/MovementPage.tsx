@@ -3,7 +3,7 @@
  * Desktop: full-page DS form (light, white card).
  * Mobile: original dark step-by-step UI.
  */
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -193,9 +193,14 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
 function DesktopMovementForm({ type, onSuccess, onBack }: {
   type: 'IN' | 'OUT'; onSuccess: (qty: number, name: string) => void; onBack: () => void
 }) {
-  const { products } = useProductStore()
-  const { getStock, addMovement } = useStockStore()
+  const { products, fetch: fetchProducts } = useProductStore()
+  const { fetchStock, getStock, addMovement } = useStockStore()
   const { user } = useAuthStore()
+
+  useEffect(() => {
+    fetchProducts()
+    fetchStock()
+  }, [])
 
   const [selectedId, setSelectedId] = useState('')
   const available = selectedId ? getStock(selectedId) : 0
@@ -217,8 +222,8 @@ function DesktopMovementForm({ type, onSuccess, onBack }: {
     setValue('productId', id, { shouldValidate: true })
   }
 
-  function onSubmit(data: FormData) {
-    addMovement(data.productId, type, data.qty, data.comment, user?.name ?? 'Пользователь')
+  async function onSubmit(data: FormData) {
+    await addMovement(data.productId, type, data.qty, data.comment, user?.name ?? 'Пользователь')
     const pName = products.find((p) => p.id === data.productId)?.name ?? ''
     onSuccess(data.qty, pName)
     reset()
@@ -558,9 +563,14 @@ function MobileMovementPage({ type }: { type: 'IN' | 'OUT' }) {
   const params   = new URLSearchParams(location.search)
   const initId   = params.get('productId') ?? ''
 
-  const { products } = useProductStore()
-  const { getStock, addMovement } = useStockStore()
+  const { products, fetch: fetchProducts } = useProductStore()
+  const { fetchStock, getStock, addMovement } = useStockStore()
   const { user } = useAuthStore()
+
+  useEffect(() => {
+    fetchProducts()
+    fetchStock()
+  }, [])
 
   const [selectedId,  setSelectedId]  = useState(initId)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -582,8 +592,8 @@ function MobileMovementPage({ type }: { type: 'IN' | 'OUT' }) {
     setValue('productId', id, { shouldValidate: true })
   }
 
-  const onSubmit = (data: FormData) => {
-    addMovement(data.productId, type, data.qty, data.comment, user?.name ?? 'Пользователь')
+  const onSubmit = async (data: FormData) => {
+    await addMovement(data.productId, type, data.qty, data.comment, user?.name ?? 'Пользователь')
     setDoneQty(data.qty)
     setShowSuccess(true)
   }

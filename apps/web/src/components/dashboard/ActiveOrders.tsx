@@ -1,14 +1,26 @@
 import { memo } from 'react'
-import { ACTIVE_ORDERS, type OrderStatus } from '@/mock/dashboard'
+import type { DashboardRecentOrder } from '@/api/dashboard'
 
-const STATUS_META: Record<OrderStatus, { label: string; color: string; bg: string; border: string; dot: string }> = {
-  NEW:      { label: 'Новый',     color: '#5b6ef5',            bg: 'rgba(91,110,245,0.1)',       border: 'rgba(91,110,245,0.25)',       dot: '#5b6ef5'                  },
-  IN_WORK:  { label: 'В работе',  color: 'var(--warning-fg)',  bg: 'var(--warning-bg)',           border: 'var(--warning-border)',        dot: 'var(--warning-fg)'        },
-  DONE:     { label: 'Готов',     color: 'var(--success-fg)',  bg: 'var(--success-bg)',           border: 'var(--success-border)',        dot: 'var(--success-fg)'        },
-  CANCELED: { label: 'Отменён',   color: 'var(--text-tertiary)', bg: 'var(--surface-sunken)',    border: 'var(--border-subtle)',         dot: 'var(--text-disabled)'     },
+const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
+  NEW:       { label: 'Новый',     color: '#5b6ef5',              bg: 'rgba(91,110,245,0.1)',     border: 'rgba(91,110,245,0.25)',   dot: '#5b6ef5'                },
+  IN_WORK:   { label: 'В работе',  color: 'var(--warning-fg)',    bg: 'var(--warning-bg)',         border: 'var(--warning-border)',   dot: 'var(--warning-fg)'      },
+  DONE:      { label: 'Готов',     color: 'var(--success-fg)',    bg: 'var(--success-bg)',         border: 'var(--success-border)',   dot: 'var(--success-fg)'      },
+  DELIVERED: { label: 'Выдан',     color: 'var(--success-fg)',    bg: 'var(--success-bg)',         border: 'var(--success-border)',   dot: 'var(--success-fg)'      },
+  CANCELED:  { label: 'Отменён',   color: 'var(--text-tertiary)', bg: 'var(--surface-sunken)',     border: 'var(--border-subtle)',    dot: 'var(--text-disabled)'   },
 }
 
-export const ActiveOrders = memo(function ActiveOrders() {
+const FALLBACK_META = STATUS_META['NEW']
+
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  const now = new Date()
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
+  if (diffDays === 0) return 'сегодня'
+  if (diffDays === 1) return 'вчера'
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+}
+
+export const ActiveOrders = memo(function ActiveOrders({ orders }: { orders: DashboardRecentOrder[] }) {
   return (
     <div
       className="m-list animate-fade-up opacity-0 [animation-fill-mode:forwards]"
@@ -30,8 +42,10 @@ export const ActiveOrders = memo(function ActiveOrders() {
 
       {/* Order cards */}
       <ul className="divide-ds">
-        {ACTIVE_ORDERS.map((order, i) => {
-          const st = STATUS_META[order.status]
+        {orders.map((order, i) => {
+          const st = STATUS_META[order.status] ?? FALLBACK_META
+          const itemsLabel = order.items ? `${order.items.reduce((s, it) => s + it.qty, 0)} шт.` : ''
+          const totalLabel = order.totalAmount ? `${order.totalAmount.toLocaleString('ru-RU')} UZS` : ''
           return (
             <li
               key={order.id}
@@ -54,19 +68,21 @@ export const ActiveOrders = memo(function ActiveOrders() {
                     {order.num}
                   </span>
                   <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {order.client}
+                    {order.clientName}
                   </span>
                 </div>
                 <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2, marginBottom: 0 }}>
-                  {order.items} · {order.date}
+                  {itemsLabel}{itemsLabel && ' · '}{formatDate(order.createdAt)}
                 </p>
               </div>
 
               {/* Right side */}
               <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', margin: 0 }}>
-                  {order.total}
-                </p>
+                {totalLabel && (
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', margin: 0 }}>
+                    {totalLabel}
+                  </p>
+                )}
                 <span style={{
                   fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
                   padding: '2px 6px', borderRadius: 6,

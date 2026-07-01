@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -654,9 +654,14 @@ function KanbanBoard({ orders, onEdit }: { orders: Order[]; onEdit: (o: Order) =
 
 // ── OrdersDesktop ─────────────────────────────────────────────────────────────
 export function OrdersDesktop() {
-  const { orders, removeOrder } = useOrderStore()
-  const { sources } = useOrderSourceStore()
+  const { orders, removeOrder, fetch: fetchOrders } = useOrderStore()
+  const { sources, fetch: fetchSources } = useOrderSourceStore()
   const [view, setView]               = useState<'table' | 'kanban'>('table')
+
+  useEffect(() => {
+    fetchOrders()
+    fetchSources()
+  }, [])
   const [activeTab, setActiveTab]     = useState<'ALL' | OrderStatus>('ALL')
   const [search, setSearch]           = useState('')
   const [modalTarget, setModalTarget] = useState<null | 'new' | Order>(null)

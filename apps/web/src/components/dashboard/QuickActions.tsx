@@ -2,21 +2,25 @@ import { memo } from 'react'
 import {
   Plus, Package, Scissors, Columns, ChartBar, Users,
 } from '@phosphor-icons/react'
-import { QUICK_ACTIONS } from '@/mock/dashboard'
 import type { UserRole } from '@/store/authStore'
 
-const ICON_MAP: Record<string, React.ElementType> = {
-  Plus, Package, Scissors, Columns, ChartBar, Users,
+interface QuickAction {
+  id: string
+  label: string
+  icon: React.ElementType
+  background: string
+  color: string
+  roles: UserRole[]
 }
 
-// Map Tailwind color classes to CSS-var-based inline styles
-const ACTION_STYLES: Record<string, { background: string; color: string }> = {
-  'bg-brand-600':   { background: '#5b6ef5',            color: '#fff' },
-  'bg-emerald-600': { background: 'var(--success-solid)', color: '#fff' },
-  'bg-amber-600':   { background: 'var(--warning-solid)', color: '#fff' },
-  'bg-rose-600':    { background: 'var(--danger-solid)',  color: '#fff' },
-  'bg-purple-600':  { background: '#7c3aed',              color: '#fff' },
-}
+const QUICK_ACTIONS: QuickAction[] = [
+  { id: 'new-order',   label: 'Новый заказ',  icon: Plus,     background: '#5b6ef5',              color: '#fff', roles: ['ADMIN', 'MANAGER']   },
+  { id: 'new-receipt', label: 'Приход сырья', icon: Package,  background: 'var(--success-solid)', color: '#fff', roles: ['ADMIN', 'WAREHOUSE'] },
+  { id: 'new-produce', label: 'Задание цеху', icon: Scissors, background: 'var(--warning-solid)', color: '#fff', roles: ['ADMIN', 'WAREHOUSE'] },
+  { id: 'kanban',      label: 'Канбан',        icon: Columns,  background: '#7c3aed',              color: '#fff', roles: ['ADMIN', 'MANAGER']   },
+  { id: 'reports',     label: 'Отчёты',        icon: ChartBar, background: 'var(--danger-solid)',  color: '#fff', roles: ['ADMIN']              },
+  { id: 'clients',     label: 'Клиенты',       icon: Users,    background: '#0284c7',              color: '#fff', roles: ['ADMIN', 'MANAGER']   },
+]
 
 export const QuickActions = memo(function QuickActions({ role }: { role: UserRole }) {
   const visible = QUICK_ACTIONS.filter((a) => a.roles.includes(role))
@@ -29,10 +33,7 @@ export const QuickActions = memo(function QuickActions({ role }: { role: UserRol
       <p className="m-label" style={{ marginBottom: 12 }}>Быстрые действия</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {visible.map((action, i) => {
-          const Icon = ICON_MAP[action.icon] ?? Plus
-          // Extract the base color class from action.color string
-          const colorKey = action.color.split(' ').find((c) => c.startsWith('bg-')) ?? 'bg-brand-600'
-          const btnStyle = ACTION_STYLES[colorKey] ?? { background: '#5b6ef5', color: '#fff' }
+          const Icon = action.icon
           return (
             <button
               key={action.id}
@@ -42,7 +43,7 @@ export const QuickActions = memo(function QuickActions({ role }: { role: UserRol
                 padding: '10px 14px', borderRadius: 'var(--radius-xl)',
                 border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 600,
-                ...btnStyle,
+                background: action.background, color: action.color,
                 animationDelay: `${0.15 + i * 0.04}s`,
                 transition: 'opacity var(--dur-fast), transform var(--dur-fast)',
               }}

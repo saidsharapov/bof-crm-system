@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -13,6 +13,7 @@ import { useAuthStore, type UserRole } from '@/store/authStore'
 import { useThemeStore }               from '@/store/themeStore'
 import { useUserManagementStore, type AppUser } from '@/store/userManagementStore'
 import { useOrderSourceStore, type OrderSource } from '@/store/orderSourceStore'
+import { usersApi } from '@/api/users'
 
 // ── Role meta ─────────────────────────────────────────────────────────────────
 const ROLE_META: Record<UserRole, { label: string; icon: React.ElementType; chip: React.CSSProperties }> = {
@@ -320,25 +321,21 @@ function ProfilePane() {
 
 // ── Security pane ─────────────────────────────────────────────────────────────
 function SecurityPane() {
-  const { user }                             = useAuthStore()
-  const { users, changePassword, verifyPassword } = useUserManagementStore()
-  const [ok, setOk]                          = useState(false)
+  const [ok, setOk] = useState(false)
 
   const { register, handleSubmit, setError, reset, formState: { errors } } = useForm<PwForm>({
     resolver: zodResolver(pwSchema),
   })
 
-  function onSubmit(data: PwForm) {
-    const valid = verifyPassword(user?.login ?? '', data.current)
-    if (!valid) {
+  async function onSubmit(data: PwForm) {
+    try {
+      await usersApi.changePassword(data.current, data.next)
+      setOk(true)
+      reset()
+      setTimeout(() => setOk(false), 3000)
+    } catch {
       setError('current', { message: 'Неверный текущий пароль' })
-      return
     }
-    const me = users.find((u) => u.login === user?.login)
-    if (me) changePassword(me.id, data.next)
-    setOk(true)
-    reset()
-    setTimeout(() => setOk(false), 3000)
   }
 
   return (
@@ -414,9 +411,13 @@ function AppearancePane() {
 
 // ── Users pane ────────────────────────────────────────────────────────────────
 function UsersPane() {
-  const { users }                 = useUserManagementStore()
-  const { user: me }              = useAuthStore()
-  const [modalUser, setModalUser] = useState<AppUser | 'new' | null>(null)
+  const { users, fetch: fetchUsers } = useUserManagementStore()
+  const { user: me }                 = useAuthStore()
+  const [modalUser, setModalUser]    = useState<AppUser | 'new' | null>(null)
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -534,9 +535,13 @@ function UsersPane() {
 
 // ── Sources pane ─────────────────────────────────────────────────────────────
 function SourcesPane() {
-  const { sources, addSource, updateSource, archiveSource, restoreSource, removeSource } = useOrderSourceStore()
+  const { sources, addSource, updateSource, archiveSource, restoreSource, removeSource, fetch: fetchSources } = useOrderSourceStore()
   const [adding, setAdding]   = useState(false)
   const [newName, setNewName] = useState('')
+
+  useEffect(() => {
+    fetchSources()
+  }, [])
   const [editId, setEditId]   = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [confirmDel, setConfirmDel] = useState<string | null>(null)

@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import { ArrowUp, ArrowDown } from '@phosphor-icons/react'
 import { useAuthStore } from '@/store/authStore'
-import { KPI_METRICS, type KpiMetric } from '@/mock/dashboard'
+import { dashboardApi, type DashboardData } from '@/api/dashboard'
+import { buildKpiMetrics, type KpiMetric } from '@/components/dashboard/KpiCards'
 import { WeeklyChart }      from '@/components/dashboard/WeeklyChart'
 import { RecentMovements }  from '@/components/dashboard/RecentMovements'
 import { ActiveOrders }     from '@/components/dashboard/ActiveOrders'
@@ -86,13 +88,19 @@ function KpiCardDesktop({ metric }: { metric: KpiMetric }) {
 // ── DashboardDesktop ──────────────────────────────────────────────────────────
 export function DashboardDesktop() {
   const { user } = useAuthStore()
+  const [data, setData] = useState<DashboardData | null>(null)
+
+  useEffect(() => {
+    dashboardApi.getStats().then(setData).catch(() => {/* keep null */})
+  }, [])
+
   if (!user) return null
 
   const today = new Date().toLocaleDateString('ru-RU', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   })
 
-  const kpis = KPI_METRICS.filter((m) => m.roles.includes(user.role))
+  const kpis: KpiMetric[] = data ? buildKpiMetrics(data.kpi).filter((m) => m.roles.includes(user.role)) : []
 
   const SHOW_WAREHOUSE = user.role === 'ADMIN' || user.role === 'WAREHOUSE'
   const SHOW_ORDERS    = user.role === 'ADMIN' || user.role === 'MANAGER'
@@ -118,7 +126,7 @@ export function DashboardDesktop() {
       )}
 
       {/* Chart + movements */}
-      {(SHOW_CHART || SHOW_WAREHOUSE) && (
+      {(SHOW_CHART || SHOW_WAREHOUSE) && data && (
         <div
           style={{
             display: 'grid',
@@ -129,14 +137,14 @@ export function DashboardDesktop() {
           {SHOW_CHART && (
             <div style={{ gridColumn: SHOW_WAREHOUSE ? 'span 2' : 'span 3' }}>
               <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
-                <WeeklyChart />
+                <WeeklyChart data={data.chart} />
               </div>
             </div>
           )}
           {SHOW_WAREHOUSE && (
             <div>
               <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
-                <RecentMovements />
+                <RecentMovements movements={data.recentMovements} />
               </div>
             </div>
           )}
@@ -144,9 +152,9 @@ export function DashboardDesktop() {
       )}
 
       {/* Orders */}
-      {SHOW_ORDERS && (
+      {SHOW_ORDERS && data && (
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-2xl)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
-          <ActiveOrders />
+          <ActiveOrders orders={data.recentOrders} />
         </div>
       )}
 

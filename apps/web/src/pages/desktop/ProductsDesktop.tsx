@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -228,8 +228,13 @@ function ProductModal({
 
 // ── ProductsDesktop ───────────────────────────────────────────────────────────
 export function ProductsDesktop() {
-  const { products } = useProductStore()
-  const { getStock }  = useStockStore()
+  const { products, fetch: fetchProducts } = useProductStore()
+  const { getStock, fetchStock }  = useStockStore()
+
+  useEffect(() => {
+    fetchProducts()
+    fetchStock()
+  }, [])
 
   const [search, setSearch]           = useState('')
   const [sizeFilter, setSizeFilter]   = useState('')

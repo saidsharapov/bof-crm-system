@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Plus, Funnel, Package, X } from '@phosphor-icons/react'
 import { useProductStore, type Product } from '@/store/productStore'
 import { useStockStore }  from '@/store/stockStore'
@@ -144,8 +144,13 @@ function FilterSheet({ open, onClose, sizes, colors, filterSize, filterColor, on
 type SheetMode = { type: 'none' } | { type: 'create' } | { type: 'edit'; product: Product }
 
 export function ProductsPage() {
-  const { products, add, update, remove } = useProductStore()
-  const getStock = useStockStore((s) => s.getStock)
+  const { products, add, update, remove, fetch: fetchProducts } = useProductStore()
+  const { fetchStock, getStock } = useStockStore()
+
+  useEffect(() => {
+    fetchProducts()
+    fetchStock()
+  }, [])
 
   const [query,       setQuery]       = useState('')
   const [filterSize,  setFilterSize]  = useState('Все')
@@ -167,13 +172,13 @@ export function ProductsPage() {
 
   const hasFilters = filterSize !== 'Все' || filterColor !== 'Все'
 
-  function handleSave(data: Parameters<typeof add>[0]) {
-    if (sheet.type === 'create') add(data)
-    else if (sheet.type === 'edit') update(sheet.product.id, data)
+  async function handleSave(data: Parameters<typeof add>[0]) {
+    if (sheet.type === 'create') await add(data)
+    else if (sheet.type === 'edit') await update(sheet.product.id, data)
     setSheet({ type: 'none' })
   }
-  function handleDelete() {
-    if (sheet.type === 'edit') { remove(sheet.product.id); setSheet({ type: 'none' }) }
+  async function handleDelete() {
+    if (sheet.type === 'edit') { await remove(sheet.product.id); setSheet({ type: 'none' }) }
   }
 
   return (

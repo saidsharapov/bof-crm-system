@@ -1,6 +1,8 @@
 import { memo } from 'react'
 import { ArrowDown, ArrowUp, Lock, Factory } from '@phosphor-icons/react'
-import { RECENT_MOVEMENTS, type MovementType } from '@/mock/dashboard'
+import type { DashboardRecentMovement } from '@/api/dashboard'
+
+type MovementType = 'IN' | 'OUT' | 'RESERVE' | 'PRODUCE'
 
 const TYPE_META: Record<MovementType, { label: string; icon: React.ElementType; color: string }> = {
   IN:      { label: 'Приход',   icon: ArrowDown, color: 'var(--success-fg)' },
@@ -9,7 +11,16 @@ const TYPE_META: Record<MovementType, { label: string; icon: React.ElementType; 
   PRODUCE: { label: 'Выпуск',   icon: Factory,   color: '#5b6ef5'           },
 }
 
-export const RecentMovements = memo(function RecentMovements() {
+function formatTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins} мин`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs} ч`
+  return `${Math.floor(hrs / 24)} д`
+}
+
+export const RecentMovements = memo(function RecentMovements({ movements }: { movements: DashboardRecentMovement[] }) {
   return (
     <div
       className="m-list animate-fade-up opacity-0 [animation-fill-mode:forwards]"
@@ -31,9 +42,13 @@ export const RecentMovements = memo(function RecentMovements() {
 
       {/* List */}
       <ul className="divide-ds">
-        {RECENT_MOVEMENTS.map((mv, i) => {
-          const meta = TYPE_META[mv.type]
+        {movements.map((mv, i) => {
+          const mvType = (mv.type as MovementType) in TYPE_META ? (mv.type as MovementType) : 'OUT'
+          const meta = TYPE_META[mvType]
           const Icon = meta.icon
+          const name = mv.material?.name ?? mv.product?.name ?? '—'
+          const unit = mv.material?.unit ?? 'шт'
+          const sign = mv.qty >= 0 ? '+' : ''
           return (
             <li
               key={mv.id}
@@ -58,19 +73,19 @@ export const RecentMovements = memo(function RecentMovements() {
               {/* Content */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
-                  {mv.material}
+                  {name}
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '2px 0 0' }}>
-                  {mv.reason}
+                  {mv.comment ?? meta.label}
                 </p>
               </div>
 
               {/* Right */}
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-mono)', color: meta.color, margin: 0 }}>
-                  {mv.qty} {mv.unit}
+                  {sign}{mv.qty} {unit}
                 </p>
-                <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>{mv.time}</p>
+                <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>{formatTime(mv.createdAt)}</p>
               </div>
             </li>
           )

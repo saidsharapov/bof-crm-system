@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowSquareIn, ArrowSquareOut, X, Plus, Pencil, Trash } from '@phosphor-icons/react'
 import { useProductStore } from '@/store/productStore'
@@ -369,8 +369,14 @@ function Tab({ active, onClick, children }: { active: boolean; onClick: () => vo
 // ── Товары tab ────────────────────────────────────────────────────────────────
 function ProductsTab() {
   const navigate = useNavigate()
-  const { products } = useProductStore()
-  const { movements, getStock } = useStockStore()
+  const { products, fetch: fetchProducts } = useProductStore()
+  const { movements, getStock, fetchStock, fetchMovements } = useStockStore()
+
+  useEffect(() => {
+    fetchProducts()
+    fetchStock()
+    fetchMovements()
+  }, [])
 
   const stockMap: Record<string, number> = {}
   for (const p of products) stockMap[p.id] = getStock(p.id)
@@ -504,7 +510,11 @@ function ProductsTab() {
 
 // ── Сырьё tab ─────────────────────────────────────────────────────────────────
 function MaterialsTab() {
-  const { materials, movements, getStock } = useMaterialStore()
+  const { materials, movements, getStock, fetch: fetchMaterials } = useMaterialStore()
+
+  useEffect(() => {
+    fetchMaterials()
+  }, [])
 
   const [moveDrawer, setMoveDrawer] = useState<{ materialId: string; mode: 'IN' | 'OUT' } | null>(null)
   const [formDrawer, setFormDrawer] = useState<'new' | Material | null>(null)

@@ -1,12 +1,12 @@
 import { memo, useState } from 'react'
 import clsx from 'clsx'
-import { WEEKLY_DATA } from '@/mock/dashboard'
+import type { DashboardChartPoint } from '@/api/dashboard'
 import { useThemeStore } from '@/store/themeStore'
 
 type Metric = 'orders' | 'revenue'
 
 // ── SVG bar + area chart ──────────────────────────────────────────────────────
-function BarChart({ data, metric, isDark }: { data: typeof WEEKLY_DATA; metric: Metric; isDark: boolean }) {
+function BarChart({ data, metric, isDark }: { data: DashboardChartPoint[]; metric: Metric; isDark: boolean }) {
   const W   = 300
   const H   = 100
   const PAD = { top: 8, bottom: 24, left: 4, right: 4 }
@@ -122,13 +122,13 @@ function BarChart({ data, metric, isDark }: { data: typeof WEEKLY_DATA; metric: 
 }
 
 // ── Exported chart card ───────────────────────────────────────────────────────
-export const WeeklyChart = memo(function WeeklyChart() {
+export const WeeklyChart = memo(function WeeklyChart({ data }: { data: DashboardChartPoint[] }) {
   const [metric, setMetric] = useState<Metric>('orders')
   const isDark = useThemeStore((s) => s.theme === 'dark')
 
   const totals = {
-    orders:  WEEKLY_DATA.reduce((s, d) => s + d.orders, 0),
-    revenue: WEEKLY_DATA.reduce((s, d) => s + d.revenue, 0),
+    orders:  data.reduce((s, d) => s + d.orders, 0),
+    revenue: data.reduce((s, d) => s + d.revenue, 0),
   }
 
   return (
@@ -167,7 +167,7 @@ export const WeeklyChart = memo(function WeeklyChart() {
       </div>
 
       {/* Chart */}
-      <BarChart data={WEEKLY_DATA} metric={metric} isDark={isDark} />
+      <BarChart data={data} metric={metric} isDark={isDark} />
     </div>
   )
 })

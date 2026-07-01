@@ -1,0 +1,81 @@
+import { memo } from 'react'
+import { ArrowDown, ArrowUp, Lock, Factory } from '@phosphor-icons/react'
+import { RECENT_MOVEMENTS, type MovementType } from '@/mock/dashboard'
+
+const TYPE_META: Record<MovementType, { label: string; icon: React.ElementType; color: string }> = {
+  IN:      { label: 'Приход',   icon: ArrowDown, color: 'var(--success-fg)' },
+  OUT:     { label: 'Расход',   icon: ArrowUp,   color: 'var(--danger-fg)'  },
+  RESERVE: { label: 'Резерв',   icon: Lock,      color: 'var(--warning-fg)' },
+  PRODUCE: { label: 'Выпуск',   icon: Factory,   color: '#5b6ef5'           },
+}
+
+export const RecentMovements = memo(function RecentMovements() {
+  return (
+    <div
+      className="m-list animate-fade-up opacity-0 [animation-fill-mode:forwards]"
+      style={{ animationDelay: '0.26s' }}
+    >
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)',
+      }}>
+        <p className="m-label">Движения склада</p>
+        <button style={{
+          fontSize: 10, color: '#5b6ef5', background: 'none', border: 'none',
+          cursor: 'pointer', fontWeight: 500,
+        }}>
+          Все →
+        </button>
+      </div>
+
+      {/* List */}
+      <ul className="divide-ds">
+        {RECENT_MOVEMENTS.map((mv, i) => {
+          const meta = TYPE_META[mv.type]
+          const Icon = meta.icon
+          return (
+            <li
+              key={mv.id}
+              className="animate-fade-up opacity-0 [animation-fill-mode:forwards]"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                animationDelay: `${0.28 + i * 0.04}s`,
+                transition: 'background var(--dur-fast)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              {/* Icon badge */}
+              <div style={{
+                width: 32, height: 32, borderRadius: 'var(--radius-lg)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                background: 'var(--surface-sunken)',
+              }}>
+                <Icon size={14} weight="duotone" style={{ color: meta.color }} />
+              </div>
+
+              {/* Content */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
+                  {mv.material}
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: '2px 0 0' }}>
+                  {mv.reason}
+                </p>
+              </div>
+
+              {/* Right */}
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-mono)', color: meta.color, margin: 0 }}>
+                  {mv.qty} {mv.unit}
+                </p>
+                <p style={{ fontSize: 10, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>{mv.time}</p>
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+})

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#0d0d1f"/>
+
+  <!-- Top bar — full width -->
+  <rect x="88" y="136" width="336" height="60" rx="30" fill="#5b6ef5"/>
+
+  <!-- Middle bar — 75% width -->
+  <rect x="88" y="226" width="252" height="60" rx="30" fill="#5b6ef5" opacity="0.65"/>
+
+  <!-- Bottom bar — 50% width -->
+  <rect x="88" y="316" width="168" height="60" rx="30" fill="#5b6ef5" opacity="0.35"/>
+
+  <!-- Dot accent on right of top bar -->
+  <circle cx="392" cy="166" r="20" fill="#ffffff" opacity="0.15"/>
+</svg>

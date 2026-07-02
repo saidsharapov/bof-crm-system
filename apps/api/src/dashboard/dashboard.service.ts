@@ -40,11 +40,25 @@ export class DashboardService {
       include: { items: { include: { product: true } }, source: true },
     });
 
-    const recentMovements = await this.prisma.productMovement.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-      include: { product: true },
-    });
+    const [prodMovements, matMovements] = await Promise.all([
+      this.prisma.productMovement.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        include: { product: true },
+      }),
+      this.prisma.materialMovement.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        include: { material: true },
+      }),
+    ]);
+
+    const recentMovements = [
+      ...prodMovements.map(m => ({ ...m, _source: 'product' as const })),
+      ...matMovements.map(m => ({ ...m, _source: 'material' as const })),
+    ]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 10);
 
     return {
       kpi: {

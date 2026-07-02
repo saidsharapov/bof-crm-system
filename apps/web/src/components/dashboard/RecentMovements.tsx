@@ -8,7 +8,7 @@ const TYPE_META: Record<MovementType, { label: string; icon: React.ElementType; 
   IN:      { label: 'Приход',   icon: ArrowDown, color: 'var(--success-fg)' },
   OUT:     { label: 'Расход',   icon: ArrowUp,   color: 'var(--danger-fg)'  },
   RESERVE: { label: 'Резерв',   icon: Lock,      color: 'var(--warning-fg)' },
-  PRODUCE: { label: 'Выпуск',   icon: Factory,   color: '#5b6ef5'           },
+  PRODUCE: { label: 'Выпуск',   icon: Factory,   color: 'var(--info-fg)'    },
 }
 
 function formatTime(iso: string): string {
@@ -33,7 +33,7 @@ export const RecentMovements = memo(function RecentMovements({ movements }: { mo
       }}>
         <p className="m-label">Движения склада</p>
         <button style={{
-          fontSize: 10, color: '#5b6ef5', background: 'none', border: 'none',
+          fontSize: 10, color: 'var(--text-secondary)', background: 'none', border: 'none',
           cursor: 'pointer', fontWeight: 500,
         }}>
           Все →

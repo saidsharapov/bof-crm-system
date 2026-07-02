@@ -1,5 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
-import clsx from 'clsx'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { z } from 'zod'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -26,12 +25,12 @@ import { DateTimePickerMobile } from '@/components/ui/DateTimePickerMobile'
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export const STATUS_META: Record<OrderStatus, { label: string; color: string; dot: string; chip: string }> = {
-  NEW:        { label: 'Новый',       color: 'text-brand-300',   dot: 'bg-brand-400',    chip: 'bg-brand-400/10 border-brand-400/20 text-brand-300'   },
-  IN_WORK:    { label: 'В работе',    color: 'text-amber-300',   dot: 'bg-amber-400',    chip: 'bg-amber-400/10 border-amber-400/20 text-amber-300'   },
-  DELIVERING: { label: 'Доставляется',color: 'text-purple-300',  dot: 'bg-purple-400',   chip: 'bg-purple-400/10 border-purple-400/20 text-purple-300' },
-  DELIVERED:  { label: 'Доставлен',   color: 'text-emerald-300', dot: 'bg-emerald-400',  chip: 'bg-emerald-400/10 border-emerald-400/20 text-emerald-300' },
-  CANCELED:   { label: 'Отменён',     color: 'text-white/25',    dot: 'bg-white/20',     chip: 'bg-white/5 border-white/10 text-white/30'              },
+export const STATUS_META: Record<OrderStatus, { label: string; dot: string; chip: React.CSSProperties }> = {
+  NEW:        { label: 'Новый',        dot: 'var(--warning-fg)',  chip: { color: 'var(--warning-fg)',  background: 'var(--warning-bg)',  border: '1px solid var(--warning-border)'  } },
+  IN_WORK:    { label: 'В работе',     dot: 'var(--info-fg)',     chip: { color: 'var(--info-fg)',     background: 'var(--info-bg)',     border: '1px solid var(--info-border)'     } },
+  DELIVERING: { label: 'Доставляется', dot: 'var(--accent-text)', chip: { color: 'var(--accent-text)', background: 'var(--accent-soft)', border: '1px solid var(--accent-border)'   } },
+  DELIVERED:  { label: 'Доставлен',    dot: 'var(--success-fg)',  chip: { color: 'var(--success-fg)',  background: 'var(--success-bg)',  border: '1px solid var(--success-border)'  } },
+  CANCELED:   { label: 'Отменён',      dot: 'var(--danger-fg)',   chip: { color: 'var(--danger-fg)',   background: 'var(--danger-bg)',   border: '1px solid var(--danger-border)'   } },
 }
 
 const STATUS_ORDER: OrderStatus[] = ['NEW', 'IN_WORK', 'DELIVERING', 'DELIVERED', 'CANCELED']
@@ -313,7 +312,7 @@ function OrderForm({
         </button>
         <button type="submit" style={{
           flex: 1, padding: '12px 0', borderRadius: 'var(--radius-xl)',
-          border: 'none', background: '#5b6ef5', color: '#fff',
+          border: 'none', background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
           fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
         }}>
           {initial ? 'Сохранить' : 'Создать заказ'}
@@ -379,7 +378,7 @@ function OrderCard({ order, onTap }: { order: Order; onTap: () => void }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>{order.num}</span>
-            <span className={clsx('text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border', st.chip)}>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 6px', borderRadius: 6, ...st.chip }}>
               {st.label}
             </span>
           </div>
@@ -477,9 +476,9 @@ function ListView({
             style={{
               flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
               padding: '6px 12px', borderRadius: 'var(--radius-lg)',
-              border: `1px solid ${tab === key ? '#5b6ef5' : 'var(--border-subtle)'}`,
-              background: tab === key ? '#5b6ef5' : 'var(--surface-sunken)',
-              color: tab === key ? '#fff' : 'var(--text-tertiary)',
+              border: `1px solid ${tab === key ? 'var(--accent-border)' : 'var(--border-subtle)'}`,
+              background: tab === key ? 'var(--accent)' : 'var(--surface-sunken)',
+              color: tab === key ? 'var(--text-on-accent)' : 'var(--text-tertiary)',
               fontSize: 12, fontWeight: 500, cursor: 'pointer',
               transition: 'all var(--dur-fast)',
             }}
@@ -489,7 +488,7 @@ function ListView({
               <span style={{
                 fontSize: 9, fontWeight: 700, padding: '1px 4px', borderRadius: 999,
                 background: tab === key ? 'rgba(255,255,255,0.2)' : 'var(--border-default)',
-                color: tab === key ? '#fff' : 'var(--text-tertiary)',
+                color: tab === key ? 'var(--text-on-accent)' : 'var(--text-tertiary)',
               }}>{cnt}</span>
             )}
           </button>
@@ -668,9 +667,9 @@ function KanbanView({ onEdit }: { onEdit: (o: Order) => void }) {
             data-kanban-col={status}
             style={{
               flexShrink: 0, width: 256, display: 'flex', flexDirection: 'column',
-              borderRadius: 'var(--radius-2xl)', border: `1px solid ${isActive ? 'rgba(91,110,245,0.4)' : 'var(--border-subtle)'}`,
-              background: isActive ? 'rgba(91,110,245,0.05)' : 'var(--surface-card)',
-              boxShadow: isActive ? '0 0 20px rgba(91,110,245,0.15)' : 'var(--shadow-xs)',
+              borderRadius: 'var(--radius-2xl)', border: `1px solid ${isActive ? 'var(--accent-border)' : 'var(--border-subtle)'}`,
+              background: isActive ? 'var(--accent-soft)' : 'var(--surface-card)',
+              boxShadow: isActive ? '0 0 20px rgba(255,237,0,0.10)' : 'var(--shadow-xs)',
               transition: 'all var(--dur-fast)',
             }}
           >
@@ -680,7 +679,7 @@ function KanbanView({ onEdit }: { onEdit: (o: Order) => void }) {
               padding: '10px 12px', borderBottom: '1px solid var(--border-subtle)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className={clsx('w-2 h-2 rounded-full', meta.dot)} style={{ flexShrink: 0 }} />
+                <span style={{ flexShrink: 0, width: 8, height: 8, borderRadius: '50%', background: meta.dot }} />
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{meta.label}</span>
               </div>
               <span style={{
@@ -704,8 +703,8 @@ function KanbanView({ onEdit }: { onEdit: (o: Order) => void }) {
               {colOrders.length === 0 && (
                 <div style={{
                   height: 64, borderRadius: 'var(--radius-xl)',
-                  border: `2px dashed ${isActive ? 'rgba(91,110,245,0.4)' : 'var(--border-subtle)'}`,
-                  background: isActive ? 'rgba(91,110,245,0.05)' : 'transparent',
+                  border: `2px dashed ${isActive ? 'var(--accent-border)' : 'var(--border-subtle)'}`,
+                  background: isActive ? 'var(--accent-soft)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>
@@ -779,8 +778,8 @@ export function OrdersPage() {
                   style={{
                     padding: 6, borderRadius: 'var(--radius-md)',
                     border: 'none', cursor: 'pointer',
-                    background: view === mode ? '#5b6ef5' : 'transparent',
-                    color: view === mode ? '#fff' : 'var(--text-tertiary)',
+                    background: view === mode ? 'var(--accent)' : 'transparent',
+                    color: view === mode ? 'var(--text-on-accent)' : 'var(--text-tertiary)',
                     transition: 'all var(--dur-fast)',
                   }}
                 >
@@ -805,9 +804,9 @@ export function OrdersPage() {
         style={{
           position: 'fixed', bottom: 88, right: 16, zIndex: 30,
           width: 56, height: 56, borderRadius: '50%',
-          background: '#5b6ef5', color: '#fff', border: 'none', cursor: 'pointer',
+          background: 'var(--accent)', color: 'var(--text-on-accent)', border: 'none', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 20px rgba(91,110,245,0.45)',
+          boxShadow: '0 4px 20px rgba(255,237,0,0.35)',
         }}
         aria-label="Новый заказ"
       >

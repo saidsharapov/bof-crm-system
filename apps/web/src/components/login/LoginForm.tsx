@@ -246,44 +246,30 @@ export default function LoginForm({ variant = 'dark' }: LoginFormProps) {
       <button
         type="submit"
         disabled={isLoading}
-        style={isLight && !isLoading ? {
-          width: '100%',
-          height: 44,
-          borderRadius: 10,
-          background: 'var(--action-primary-bg)',
-          color: 'var(--action-primary-fg)',
-          border: 'none',
-          fontSize: 14,
-          fontWeight: 600,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          transition: 'background 0.15s',
-          fontFamily: 'var(--font-sans)',
-        } : isLight && isLoading ? {
-          width: '100%',
-          height: 44,
-          borderRadius: 10,
-          background: 'var(--surface-sunken)',
-          border: '1px solid var(--border-default)',
-          color: 'var(--text-tertiary)',
-          cursor: 'not-allowed',
-          fontSize: 14,
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          fontFamily: 'var(--font-sans)',
-        } : undefined}
+        style={
+          isLight && !isLoading ? {
+            width: '100%', height: 44, borderRadius: 10,
+            background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
+            border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            transition: 'background 0.15s', fontFamily: 'var(--font-sans)',
+          } : isLight && isLoading ? {
+            width: '100%', height: 44, borderRadius: 10,
+            background: 'var(--surface-sunken)', border: '1px solid var(--border-default)',
+            color: 'var(--text-tertiary)', cursor: 'not-allowed', fontSize: 14, fontWeight: 600,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            fontFamily: 'var(--font-sans)',
+          } : !isLight && !isLoading ? {
+            background: 'var(--accent)', color: 'var(--text-on-accent)',
+            boxShadow: '0 4px 20px rgba(255,237,0,0.25)',
+          } : undefined
+        }
         className={clsx(
-          !isLight && 'group relative w-full overflow-hidden rounded-xl py-3.5 text-sm font-semibold text-white transition-all duration-200 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60',
+          !isLight && 'group relative w-full overflow-hidden rounded-xl py-3.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none',
           !isLight && (
             isLoading
-              ? 'cursor-not-allowed bg-ink-700 border border-white/[0.06]'
-              : 'bg-brand-600 hover:bg-brand-500 shadow-[0_4px_20px_rgba(70,85,224,0.35)]'
+              ? 'cursor-not-allowed bg-ink-700 border border-white/[0.06] text-white/40'
+              : 'cursor-pointer'
           ),
         )}
         onMouseEnter={isLight && !isLoading ? (e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--action-primary-hover)' } : undefined}
@@ -315,7 +301,7 @@ export default function LoginForm({ variant = 'dark' }: LoginFormProps) {
       {/* Security note (dark только) */}
       {!isLight && (
         <div className="flex items-center justify-center gap-1.5 text-[11px] text-white/20">
-          <ShieldCheck size={12} weight="duotone" className="text-brand-400/50" />
+          <ShieldCheck size={12} weight="duotone" style={{ color: 'rgba(255,237,0,0.45)' }} />
           Защищённое соединение · BOF CRM
         </div>
       )}

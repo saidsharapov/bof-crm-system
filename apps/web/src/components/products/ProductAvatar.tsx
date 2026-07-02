@@ -1,6 +1,6 @@
 // Renders product photo or a deterministic gradient fallback
 const GRADIENTS = [
-  'from-brand-700 to-brand-500',
+  'from-neutral-700 to-neutral-500',
   'from-emerald-700 to-emerald-500',
   'from-amber-700 to-amber-500',
   'from-rose-700 to-rose-500',

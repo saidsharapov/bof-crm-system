@@ -2,7 +2,7 @@ import { memo } from 'react'
 import type { DashboardRecentOrder } from '@/api/dashboard'
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
-  NEW:       { label: 'Новый',     color: '#5b6ef5',              bg: 'rgba(91,110,245,0.1)',     border: 'rgba(91,110,245,0.25)',   dot: '#5b6ef5'                },
+  NEW:       { label: 'Новый',     color: 'var(--warning-fg)',    bg: 'var(--warning-bg)',        border: 'var(--warning-border)',   dot: 'var(--warning-fg)'      },
   IN_WORK:   { label: 'В работе',  color: 'var(--warning-fg)',    bg: 'var(--warning-bg)',         border: 'var(--warning-border)',   dot: 'var(--warning-fg)'      },
   DONE:      { label: 'Готов',     color: 'var(--success-fg)',    bg: 'var(--success-bg)',         border: 'var(--success-border)',   dot: 'var(--success-fg)'      },
   DELIVERED: { label: 'Выдан',     color: 'var(--success-fg)',    bg: 'var(--success-bg)',         border: 'var(--success-border)',   dot: 'var(--success-fg)'      },
@@ -33,7 +33,7 @@ export const ActiveOrders = memo(function ActiveOrders({ orders }: { orders: Das
       }}>
         <p className="m-label">Активные заказы</p>
         <button style={{
-          fontSize: 10, color: '#5b6ef5', background: 'none', border: 'none',
+          fontSize: 10, color: 'var(--text-secondary)', background: 'none', border: 'none',
           cursor: 'pointer', fontWeight: 500,
         }}>
           Все →

@@ -37,7 +37,7 @@ export function PwaUpdateToast() {
         padding:      '12px 16px',
         borderRadius: 16,
         background:   'rgba(15,15,26,0.95)',
-        border:       '1px solid rgba(91,110,245,0.35)',
+        border:       '1px solid rgba(255,237,0,0.25)',
         boxShadow:    '0 8px 32px rgba(0,0,0,0.6)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
@@ -49,7 +49,7 @@ export function PwaUpdateToast() {
         whiteSpace:   'nowrap',
       }}
     >
-      <ArrowClockwise size={16} weight="bold" style={{ color: '#5b6ef5', flexShrink: 0 }} />
+      <ArrowClockwise size={16} weight="bold" style={{ color: 'var(--accent)', flexShrink: 0 }} />
 
       <span style={{ flex: 1, color: 'rgba(255,255,255,0.75)' }}>
         Доступно обновление
@@ -60,9 +60,9 @@ export function PwaUpdateToast() {
         style={{
           padding:      '5px 12px',
           borderRadius: 8,
-          background:   '#5b6ef5',
+          background:   'var(--accent)',
           border:       'none',
-          color:        '#fff',
+          color:        'var(--text-on-accent)',
           fontSize:     12,
           fontWeight:   600,
           cursor:       'pointer',

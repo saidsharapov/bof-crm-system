@@ -86,7 +86,7 @@ export const BottomNav = memo(function BottomNav({ role }: { role: UserRole }) {
                     size={22}
                     weight={isActive ? 'fill' : 'regular'}
                     style={{
-                      color:      isActive ? '#5b6ef5' : 'var(--text-tertiary)',
+                      color:      isActive ? 'var(--accent-text)' : 'var(--text-tertiary)',
                       transition: 'color 150ms',
                     }}
                   />
@@ -99,14 +99,14 @@ export const BottomNav = memo(function BottomNav({ role }: { role: UserRole }) {
                       width:           4,
                       height:          4,
                       borderRadius:    '50%',
-                      background:      '#5b6ef5',
+                      background:      'var(--accent-text)',
                     }} />
                   )}
                 </div>
                 <span style={{
                   fontSize:   9,
                   fontWeight: isActive ? 600 : 400,
-                  color:      isActive ? '#5b6ef5' : 'var(--text-tertiary)',
+                  color:      isActive ? 'var(--accent-text)' : 'var(--text-tertiary)',
                   lineHeight: 1.2,
                   textAlign:  'center',
                   transition: 'color 150ms',

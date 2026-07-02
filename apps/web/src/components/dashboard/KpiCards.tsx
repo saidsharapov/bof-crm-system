@@ -80,10 +80,10 @@ function Sparkline({ data, color }: { data: number[]; color: KpiMetric['color'] 
     ` L ${lastX},${H} L 0,${H} Z`
 
   const STROKE: Record<KpiMetric['color'], string> = {
-    brand: '#5b6ef5', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e',
+    brand: '#FFED00', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e',
   }
   const FILL: Record<KpiMetric['color'], string> = {
-    brand: 'rgba(91,110,245,0.18)', emerald: 'rgba(16,185,129,0.18)',
+    brand: 'rgba(255,237,0,0.18)', emerald: 'rgba(16,185,129,0.18)',
     amber: 'rgba(245,158,11,0.18)', rose: 'rgba(244,63,94,0.18)',
   }
 
@@ -99,7 +99,7 @@ function Sparkline({ data, color }: { data: number[]; color: KpiMetric['color'] 
 
 // ── Single card ───────────────────────────────────────────────────────────────
 const ACCENT_COLOR: Record<KpiMetric['color'], string> = {
-  brand: '#5b6ef5', emerald: 'var(--success-fg)', amber: 'var(--warning-fg)', rose: 'var(--danger-fg)',
+  brand: 'var(--accent-text)', emerald: 'var(--success-fg)', amber: 'var(--warning-fg)', rose: 'var(--danger-fg)',
 }
 
 function KpiCard({ metric, delay }: { metric: KpiMetric; delay: string }) {

@@ -125,7 +125,7 @@ export interface QuickAction {
 }
 
 export const QUICK_ACTIONS: QuickAction[] = [
-  { id: 'new-order',    label: 'Новый заказ',   icon: 'Plus',          color: 'bg-brand-600 hover:bg-brand-500',     roles: ['ADMIN', 'MANAGER']   },
+  { id: 'new-order',    label: 'Новый заказ',   icon: 'Plus',          color: 'bg-bof-accent hover:bg-bof-accent/90', roles: ['ADMIN', 'MANAGER']   },
   { id: 'new-receipt',  label: 'Приход сырья',  icon: 'Package',       color: 'bg-emerald-600 hover:bg-emerald-500', roles: ['ADMIN', 'WAREHOUSE'] },
   { id: 'new-produce',  label: 'Задание цеху',  icon: 'Scissors',      color: 'bg-amber-600 hover:bg-amber-500',     roles: ['ADMIN', 'WAREHOUSE'] },
   { id: 'kanban',       label: 'Канбан',         icon: 'Columns',       color: 'bg-purple-600 hover:bg-purple-500',  roles: ['ADMIN', 'MANAGER']   },

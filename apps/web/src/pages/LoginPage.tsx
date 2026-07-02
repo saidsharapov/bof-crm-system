@@ -2,22 +2,8 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useIsDesktop } from '@/hooks/useIsDesktop'
-import AnimatedBackground from '@/components/login/AnimatedBackground'
 import BofLogo from '@/components/login/BofLogo'
 import LoginForm from '@/components/login/LoginForm'
-
-// ── Mobile: status dot ───────────────────────────────────────────────────────
-function StatusDot() {
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className="relative flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-      </span>
-      <span className="text-[10px] text-white/25 tracking-wide">Система работает</span>
-    </div>
-  )
-}
 
 // ── Desktop: левая тёмная панель с анимациями ────────────────────────────────
 function DesktopHeroPanel() {
@@ -151,55 +137,36 @@ function DesktopFormPanel() {
   )
 }
 
-// ── Мобильный вид (без изменений) ────────────────────────────────────────────
+// ── Мобильный вид — идентичен десктопной форме ───────────────────────────────
 function MobileLogin() {
   return (
-    <div className="noise relative min-h-[100dvh] flex flex-col items-center justify-center px-4 py-10 overflow-hidden">
-      <AnimatedBackground />
-
-      <div
-        className="pointer-events-none fixed top-0 right-0 w-[50vw] h-[50vh] opacity-[0.025]"
-        style={{ zIndex: 1 }}
-        aria-hidden="true"
-      >
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-      </div>
-
-      <div
-        className="pointer-events-none fixed bottom-0 left-0 w-72 h-72 rounded-full"
-        style={{ zIndex: 1, background: 'radial-gradient(circle, rgba(70,85,224,0.12) 0%, transparent 70%)', transform: 'translate(-30%, 30%)' }}
-        aria-hidden="true"
-      />
-
-      <div className="relative w-full max-w-[380px] flex flex-col gap-8" style={{ zIndex: 2 }}>
-        <header className="flex flex-col items-center gap-4 text-center">
-          <div className="animate-fade-up opacity-0" style={{ animationDelay: '0s', animationFillMode: 'forwards' }}>
-            <div className="animate-float">
-              <BofLogo size={56} />
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: 'var(--surface-page)' }}>
+      <div style={{ width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column', gap: 28 }}>
+        {/* Логотип */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
+          <BofLogo size={52} />
+          <div>
+            <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 600, letterSpacing: 'var(--tracking-tight)', color: 'var(--text-primary)', lineHeight: 1.15 }}>
+              Добро пожаловать
+            </div>
+            <div style={{ fontSize: 'var(--text-md)', color: 'var(--text-tertiary)', marginTop: 6 }}>
+              Войдите в систему управления
             </div>
           </div>
-          <div className="animate-fade-up opacity-0" style={{ animationDelay: '0.06s', animationFillMode: 'forwards' }}>
-            <h1 className="text-[11px] font-semibold tracking-[0.25em] text-white/30 uppercase mb-2">BOF CRM</h1>
-            <p className="text-2xl font-semibold tracking-tight text-white/90 leading-snug">Добро пожаловать</p>
-            <p className="mt-1 text-sm text-white/35">Войдите в систему управления</p>
-          </div>
-        </header>
-
-        <div className="glass rounded-2xl p-6 animate-fade-up opacity-0" style={{ animationDelay: '0.10s', animationFillMode: 'forwards' }}>
-          <LoginForm variant="dark" />
         </div>
 
-        <footer className="flex items-center justify-between px-1 animate-fade-up opacity-0" style={{ animationDelay: '0.42s', animationFillMode: 'forwards' }}>
-          <StatusDot />
-          <p className="text-[10px] text-white/15 tracking-wide">v2.0.0</p>
-        </footer>
+        {/* Форма */}
+        <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--radius-2xl)', padding: 24, boxShadow: 'var(--shadow-md)' }}>
+          <LoginForm variant="light" />
+        </div>
+
+        {/* Нижняя подпись */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12, color: 'var(--text-tertiary)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success-fg)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Защищённое соединение · BOF CRM v2.0
+        </div>
       </div>
     </div>
   )

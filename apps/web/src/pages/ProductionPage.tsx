@@ -108,9 +108,9 @@ function MaterialRow({
               <button type="button" onClick={() => setCalcMode((p) => !p)} title="Калькулятор нормы"
                 style={{
                   padding: 8, borderRadius: 'var(--radius-lg)',
-                  border: `1px solid ${calcMode ? '#5b6ef5' : 'var(--border-default)'}`,
-                  background: calcMode ? 'rgba(91,110,245,0.1)' : 'none',
-                  color: calcMode ? '#5b6ef5' : 'var(--text-tertiary)',
+                  border: `1px solid ${calcMode ? 'var(--accent-border)' : 'var(--border-default)'}`,
+                  background: calcMode ? 'var(--accent-soft)' : 'none',
+                  color: calcMode ? 'var(--accent-text)' : 'var(--text-tertiary)',
                   cursor: 'pointer', flexShrink: 0,
                 }}>
                 <Calculator size={15} />
@@ -133,10 +133,10 @@ function MaterialRow({
           {/* Calculator panel */}
           {calcMode && (
             <div style={{
-              background: 'rgba(91,110,245,0.06)', border: '1px solid rgba(91,110,245,0.2)',
+              background: 'var(--accent-soft)', border: '1px solid var(--accent-border)',
               borderRadius: 'var(--radius-xl)', padding: 12, display: 'flex', flexDirection: 'column', gap: 10,
             }}>
-              <p className="m-label" style={{ color: '#5b6ef5' }}>Калькулятор расхода</p>
+              <p className="m-label" style={{ color: 'var(--accent-text)' }}>Калькулятор расхода</p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -174,9 +174,9 @@ function MaterialRow({
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Итого</span>
                   <div style={{
-                    background: 'rgba(91,110,245,0.1)', border: '1px solid rgba(91,110,245,0.25)',
+                    background: 'var(--accent-soft)', border: '1px solid var(--accent-border)',
                     borderRadius: 'var(--radius-md)', padding: '8px 10px',
-                    fontSize: 'var(--text-sm)', fontWeight: 700, color: '#5b6ef5', textAlign: 'center',
+                    fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--accent-text)', textAlign: 'center',
                   }}>
                     {calcTotal}
                   </div>
@@ -187,7 +187,7 @@ function MaterialRow({
               <button type="button" onClick={applyCalc} disabled={calcTotal <= 0 || totalUnits === 0}
                 style={{
                   width: '100%', padding: '8px 0', borderRadius: 'var(--radius-lg)',
-                  border: 'none', background: '#5b6ef5', color: '#fff',
+                  border: 'none', background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
                   fontSize: 12, fontWeight: 600, cursor: 'pointer',
                   opacity: (calcTotal <= 0 || totalUnits === 0) ? 0.4 : 1,
                 }}>
@@ -302,10 +302,10 @@ function SuccessScreen({ onDone }: { onDone: () => void }) {
     }}>
       <div style={{
         width: 80, height: 80, borderRadius: '50%',
-        background: 'rgba(91,110,245,0.12)',
+        background: 'var(--success-bg)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
       }}>
-        <CheckCircle size={44} weight="fill" style={{ color: '#5b6ef5' }} />
+        <CheckCircle size={44} weight="fill" style={{ color: 'var(--success-fg)' }} />
       </div>
       <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px' }}>
         Производство завершено
@@ -315,7 +315,7 @@ function SuccessScreen({ onDone }: { onDone: () => void }) {
       </p>
       <button onClick={onDone} style={{
         marginTop: 40, padding: '14px 32px', borderRadius: 'var(--radius-2xl)',
-        border: 'none', background: '#5b6ef5', color: '#fff',
+        border: 'none', background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
         fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
       }}>
         Готово
@@ -415,7 +415,7 @@ export function ProductionPage() {
           вы вручную указываете, сколько материала фактически израсходовано{' '}
           <span style={{ color: 'var(--danger-fg)' }}>↓ списывается</span> с сырьевого склада, и сколько готовых товаров произведено{' '}
           <span style={{ color: 'var(--success-fg)' }}>↑ добавляется</span> на склад.
-          Нажмите <span style={{ color: '#5b6ef5' }}>⊞</span> в строке материала, чтобы рассчитать расход автоматически.
+          Нажмите <span style={{ color: 'var(--accent-text)' }}>⊞</span> в строке материала, чтобы рассчитать расход автоматически.
         </p>
       </div>
 
@@ -459,8 +459,8 @@ export function ProductionPage() {
             </div>
             {totalUnits > 0 && (
               <span style={{
-                fontSize: 10, color: '#5b6ef5',
-                background: 'rgba(91,110,245,0.1)', border: '1px solid rgba(91,110,245,0.25)',
+                fontSize: 10, color: 'var(--accent-text)',
+                background: 'var(--accent-soft)', border: '1px solid var(--accent-border)',
                 padding: '2px 8px', borderRadius: 'var(--radius-lg)', flexShrink: 0, marginTop: 2,
               }}>
                 {totalUnits} изд. к выпуску
@@ -520,10 +520,10 @@ export function ProductionPage() {
           disabled={hasStockError}
           style={{
             width: '100%', padding: '16px 0', borderRadius: 'var(--radius-2xl)',
-            border: 'none', background: '#5b6ef5', color: '#fff',
+            border: 'none', background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
             fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            boxShadow: '0 4px 20px rgba(91,110,245,0.3)',
+            boxShadow: 'var(--shadow-md)',
             opacity: hasStockError ? 0.4 : 1,
           }}
         >

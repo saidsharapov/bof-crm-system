@@ -163,9 +163,9 @@ export function ProductForm({ initial, onSave, onDelete, onCancel }: ProductForm
               onClick={() => setValue('size', sz, { shouldValidate: true })}
               style={{
                 padding: '6px 14px', borderRadius: 'var(--radius-lg)',
-                border: `1px solid ${selectedSize === sz ? '#5b6ef5' : 'var(--border-default)'}`,
-                background: selectedSize === sz ? '#5b6ef5' : 'var(--surface-sunken)',
-                color: selectedSize === sz ? '#fff' : 'var(--text-secondary)',
+                border: `1px solid ${selectedSize === sz ? 'var(--accent-border)' : 'var(--border-default)'}`,
+                background: selectedSize === sz ? 'var(--accent)' : 'var(--surface-sunken)',
+                color: selectedSize === sz ? 'var(--text-on-accent)' : 'var(--text-secondary)',
                 fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 transition: 'all var(--dur-fast)',
               }}
@@ -200,9 +200,9 @@ export function ProductForm({ initial, onSave, onDelete, onCancel }: ProductForm
               style={{
                 width: 32, height: 32, borderRadius: '50%', cursor: 'pointer',
                 backgroundColor: c.hex,
-                border: `2px solid ${colorHex === c.hex ? '#5b6ef5' : 'var(--border-default)'}`,
+                border: `2px solid ${colorHex === c.hex ? 'var(--accent)' : 'var(--border-default)'}`,
                 transform: colorHex === c.hex ? 'scale(1.1)' : 'scale(1)',
-                boxShadow: colorHex === c.hex ? '0 0 8px rgba(91,110,245,0.5)' : 'none',
+                boxShadow: colorHex === c.hex ? '0 0 8px rgba(255,237,0,0.45)' : 'none',
                 transition: 'all var(--dur-fast)',
               }}
             />
@@ -260,7 +260,7 @@ export function ProductForm({ initial, onSave, onDelete, onCancel }: ProductForm
           disabled={isSubmitting}
           style={{
             flex: 1, padding: '12px 0', borderRadius: 'var(--radius-xl)',
-            border: 'none', background: '#5b6ef5', color: '#fff',
+            border: 'none', background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
             fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
             opacity: isSubmitting ? 0.5 : 1,
             transition: 'opacity var(--dur-fast)',

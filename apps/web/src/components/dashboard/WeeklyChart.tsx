@@ -39,8 +39,8 @@ function BarChart({ data, metric, isDark }: { data: DashboardChartPoint[]; metri
     >
       <defs>
         <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#5b6ef5" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#5b6ef5" stopOpacity="0"    />
+          <stop offset="0%"   stopColor="#FFED00" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#FFED00" stopOpacity="0"    />
         </linearGradient>
       </defs>
 
@@ -60,7 +60,7 @@ function BarChart({ data, metric, isDark }: { data: DashboardChartPoint[]; metri
       {/* Line */}
       <polyline
         points={polyline}
-        stroke="#5b6ef5"
+        stroke="#FFED00"
         strokeWidth="1.5"
         fill="none"
         strokeLinejoin="round"
@@ -79,7 +79,7 @@ function BarChart({ data, metric, isDark }: { data: DashboardChartPoint[]; metri
             x={x.toFixed(1)} y={y.toFixed(1)}
             width={(barW * 0.6).toFixed(1)} height={bH.toFixed(1)}
             rx="3"
-            fill={isToday ? 'rgba(91,110,245,0.35)' : 'rgba(91,110,245,0.12)'}
+            fill={isToday ? 'rgba(255,237,0,0.35)' : 'rgba(255,237,0,0.12)'}
           />
         )
       })}
@@ -89,8 +89,8 @@ function BarChart({ data, metric, isDark }: { data: DashboardChartPoint[]; metri
         const p = linePts[today]
         return (
           <>
-            <circle cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="4" fill="#5b6ef5" />
-            <circle cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="7" fill="rgba(91,110,245,0.25)" />
+            <circle cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="4" fill="#FFED00" />
+            <circle cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="7" fill="rgba(255,237,0,0.25)" />
             <text
               x={p.x.toFixed(1)} y={(p.y - 10).toFixed(1)}
               textAnchor="middle" fontSize="9" fill={isDark ? 'rgba(255,255,255,0.7)' : 'rgba(15,15,26,0.6)'} fontWeight="600"
@@ -155,10 +155,13 @@ export const WeeklyChart = memo(function WeeklyChart({ data }: { data: Dashboard
               onClick={() => setMetric(m)}
               className={clsx(
                 'px-2.5 py-1 rounded-md text-[10px] font-medium transition-all duration-150',
-                metric === m
-                  ? 'bg-brand-600 text-white shadow-sm'
-                  : 'text-white/35 hover:text-white/60',
+                metric !== m && 'text-white/35 hover:text-white/60',
               )}
+              style={metric === m ? {
+                background: 'var(--accent)',
+                color: 'var(--text-on-accent)',
+                boxShadow: '0 1px 4px rgba(255,237,0,0.25)',
+              } : undefined}
             >
               {m === 'orders' ? 'Заказы' : 'Выручка'}
             </button>

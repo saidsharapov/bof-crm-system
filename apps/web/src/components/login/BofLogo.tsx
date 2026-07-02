@@ -57,16 +57,16 @@ const BofLogo = memo(function BofLogo({ className = '', size = 48 }: BofLogoProp
 
       <defs>
         <linearGradient id="logoGradStroke" x1="6" y1="3" x2="42" y2="45" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#8193fa" />
-          <stop offset="1" stopColor="#5b6ef5" />
+          <stop stopColor="#F2DE00" />
+          <stop offset="1" stopColor="#FFED00" />
         </linearGradient>
         <linearGradient id="logoGradFill" x1="6" y1="3" x2="42" y2="45" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#8193fa" />
-          <stop offset="1" stopColor="#3a46c8" />
+          <stop stopColor="#F2DE00" />
+          <stop offset="1" stopColor="#FFED00" />
         </linearGradient>
         <radialGradient id="logoDotGrad" cx="32" cy="16" r="2.5" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#a5b8fd" />
-          <stop offset="1" stopColor="#5b6ef5" />
+          <stop stopColor="#fff8a0" />
+          <stop offset="1" stopColor="#FFED00" />
         </radialGradient>
       </defs>
     </svg>

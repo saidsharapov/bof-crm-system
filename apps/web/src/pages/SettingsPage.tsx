@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
-import { useForm } from 'react-hook-form'
+import { useForm, type UseFormRegister } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Lock, SignOut, Plus, Pencil, Trash,
@@ -19,7 +19,7 @@ import { PageHeader }  from '@/components/ui/PageHeader'
 // ── Role meta ─────────────────────────────────────────────────────────────────
 const ROLE_META: Record<UserRole, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
   ADMIN:     { label: 'Администратор', icon: Crown,        color: 'var(--warning-fg)',  bg: 'var(--warning-bg)',  border: 'var(--warning-border)'  },
-  MANAGER:   { label: 'Менеджер',      icon: PackageIcon,  color: '#5b6ef5',            bg: 'rgba(91,110,245,0.1)', border: 'rgba(91,110,245,0.25)' },
+  MANAGER:   { label: 'Менеджер',      icon: PackageIcon,  color: 'var(--info-fg)',     bg: 'var(--info-bg)',       border: 'var(--info-border)'    },
   WAREHOUSE: { label: 'Кладовщик',     icon: ShieldStar,   color: 'var(--success-fg)',  bg: 'var(--success-bg)',  border: 'var(--success-border)'  },
 }
 
@@ -62,6 +62,36 @@ function PasswordInput({ placeholder, ...props }: React.InputHTMLAttributes<HTML
         {show ? <EyeSlash size={15} /> : <Eye size={15} />}
       </button>
     </div>
+  )
+}
+
+// ── Toggle field (реactive checkbox styled as toggle) ─────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ToggleField({ register, name }: { register: UseFormRegister<any>; name: string }) {
+  const [on, setOn] = React.useState(false)
+  const reg = register(name)
+  return (
+    <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+      <input
+        {...reg}
+        type="checkbox"
+        style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+        onChange={(e) => { void reg.onChange(e); setOn(e.target.checked) }}
+      />
+      <div style={{
+        width: 40, height: 24, borderRadius: 12, transition: 'background 0.2s',
+        background: on ? 'var(--accent)' : 'var(--surface-sunken)',
+        border: '1px solid var(--border-default)',
+        position: 'relative',
+      }}>
+        <div style={{
+          position: 'absolute', top: 2, left: on ? 18 : 2,
+          width: 18, height: 18, borderRadius: '50%',
+          background: on ? 'var(--text-on-accent)' : 'var(--text-tertiary)',
+          transition: 'left 0.2s, background 0.2s',
+        }} />
+      </div>
+    </label>
   )
 }
 
@@ -116,7 +146,7 @@ function ChangePasswordSheet({ open, onClose }: { open: boolean; onClose: () => 
         </Field>
         <button type="submit" style={{
           width: '100%', padding: '14px 0', borderRadius: 'var(--radius-xl)',
-          border: 'none', background: '#5b6ef5', color: '#fff',
+          border: 'none', background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
           fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
         }}>
           Сменить пароль
@@ -211,10 +241,7 @@ function UserSheet({
         {initial && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
             <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Активен</span>
-            <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input type="checkbox" {...register('active')} style={{ display: 'none' }} />
-              <div className="w-10 h-6 bg-white/10 peer-checked:bg-brand-600 rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:transition-transform peer-checked:after:translate-x-4" />
-            </label>
+            <ToggleField register={register} name="active" />
           </div>
         )}
 
@@ -226,7 +253,7 @@ function UserSheet({
           }}>Отмена</button>
           <button type="submit" style={{
             flex: 1, padding: '12px 0', borderRadius: 'var(--radius-xl)',
-            border: 'none', background: '#5b6ef5', color: '#fff',
+            border: 'none', background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
             fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
           }}>
             {initial ? 'Сохранить' : 'Создать'}
@@ -284,7 +311,7 @@ function UserCard({ appUser, onEdit }: { appUser: AppUser; onEdit: () => void })
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 14, fontWeight: 700,
         background: appUser.active
-          ? 'linear-gradient(135deg, #3d55d0 0%, #5b6ef5 100%)'
+          ? 'var(--action-primary-bg)'
           : 'var(--surface-sunken)',
         color: appUser.active ? '#fff' : 'var(--text-tertiary)',
       }}>
@@ -298,8 +325,8 @@ function UserCard({ appUser, onEdit }: { appUser: AppUser; onEdit: () => void })
           </p>
           {isMe && (
             <span style={{
-              fontSize: 9, color: '#5b6ef5', background: 'rgba(91,110,245,0.1)',
-              padding: '2px 6px', borderRadius: 4, fontWeight: 600, border: '1px solid rgba(91,110,245,0.25)', flexShrink: 0,
+              fontSize: 9, color: 'var(--info-fg)', background: 'var(--info-bg)',
+              padding: '2px 6px', borderRadius: 4, fontWeight: 600, border: '1px solid var(--info-border)', flexShrink: 0,
             }}>Это вы</span>
           )}
         </div>
@@ -400,9 +427,9 @@ export function SettingsPage() {
         <div className="m-card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{
             width: 56, height: 56, borderRadius: 'var(--radius-2xl)', flexShrink: 0,
-            background: 'linear-gradient(135deg, #3d55d0 0%, #5b6ef5 100%)',
+            background: 'var(--action-primary-bg)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 20, fontWeight: 700, color: '#fff',
+            fontSize: 20, fontWeight: 700, color: 'var(--action-primary-fg)',
           }}>
             {initials}
           </div>
@@ -428,7 +455,7 @@ export function SettingsPage() {
         <Section title="Внешний вид">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16 }}>
             {theme === 'dark'
-              ? <Moon size={18} weight="duotone" style={{ color: '#5b6ef5' }} />
+              ? <Moon size={18} weight="duotone" style={{ color: 'var(--text-secondary)' }} />
               : <Sun  size={18} weight="duotone" style={{ color: 'var(--warning-fg)' }} />
             }
             <div style={{ flex: 1 }}>
@@ -443,7 +470,7 @@ export function SettingsPage() {
               style={{
                 position: 'relative', width: 48, height: 24, borderRadius: 12,
                 border: 'none', cursor: 'pointer',
-                background: theme === 'dark' ? '#5b6ef5' : 'var(--warning-fg)',
+                background: 'var(--action-primary-bg)',
                 transition: 'background 0.3s',
               }}
             >
@@ -462,7 +489,7 @@ export function SettingsPage() {
         <Section title="Аккаунт">
           <SettingRow
             icon={Lock} label="Сменить пароль" sub="Изменить пароль для входа"
-            onClick={() => setPwOpen(true)} iconColor="#5b6ef5"
+            onClick={() => setPwOpen(true)} iconColor="var(--info-fg)"
           />
         </Section>
 

@@ -70,8 +70,8 @@ function ProductPicker({ selected, onSelect, getStock, type }: {
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 12,
                 padding: '10px 12px', borderRadius: 'var(--radius-xl)', textAlign: 'left',
-                border: `1px solid ${isSelected ? 'rgba(91,110,245,0.3)' : 'transparent'}`,
-                background: isSelected ? 'rgba(91,110,245,0.1)' : 'none',
+                border: `1px solid ${isSelected ? 'var(--accent-border)' : 'transparent'}`,
+                background: isSelected ? 'var(--accent-soft)' : 'none',
                 cursor: noStock ? 'not-allowed' : 'pointer', opacity: noStock ? 0.4 : 1,
                 transition: 'all var(--dur-fast)',
               }}>
@@ -133,7 +133,7 @@ function SuccessOverlay({ type, qty, name, onDone }: {
       </p>
       <button onClick={onDone} style={{
         marginTop: 40, padding: '14px 32px', borderRadius: 'var(--radius-2xl)',
-        border: 'none', background: '#5b6ef5', color: '#fff',
+        border: 'none', background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
         fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
       }}>
         Готово
@@ -638,7 +638,7 @@ function MobileMovementPage({ type }: { type: 'IN' | 'OUT' }) {
             <p className="m-label">1. Выберите товар</p>
             {selectedProduct && (
               <button type="button" onClick={() => handleSelectProduct('')}
-                style={{ fontSize: 10, color: '#5b6ef5', background: 'none', border: 'none', cursor: 'pointer' }}>
+                style={{ fontSize: 10, color: 'var(--accent-text)', background: 'none', border: 'none', cursor: 'pointer' }}>
                 Изменить
               </button>
             )}

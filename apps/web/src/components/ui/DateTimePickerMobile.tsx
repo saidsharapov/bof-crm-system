@@ -351,7 +351,7 @@ export function DateTimePickerMobile({ value, onChange, placeholder, hasError }:
               onClick={confirm}
               style={{
                 flex: 1, padding: '12px 0', borderRadius: 'var(--radius-xl)',
-                border: 'none', background: '#5b6ef5', color: '#fff',
+                border: 'none', background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
                 fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
                 fontFamily: 'var(--font-sans)',
               }}

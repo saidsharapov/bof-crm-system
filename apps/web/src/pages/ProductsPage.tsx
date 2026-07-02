@@ -93,9 +93,9 @@ function FilterChips({ label, options, value, onChange }: { label: string; optio
               flexShrink: 0,
               padding: '6px 14px',
               borderRadius: 'var(--radius-lg)',
-              border: `1px solid ${value === opt ? '#5b6ef5' : 'var(--border-default)'}`,
-              background: value === opt ? '#5b6ef5' : 'var(--surface-sunken)',
-              color: value === opt ? '#fff' : 'var(--text-secondary)',
+              border: `1px solid ${value === opt ? 'var(--accent-border)' : 'var(--border-default)'}`,
+              background: value === opt ? 'var(--accent)' : 'var(--surface-sunken)',
+              color: value === opt ? 'var(--text-on-accent)' : 'var(--text-secondary)',
               fontSize: 'var(--text-xs)',
               fontWeight: value === opt ? 600 : 400,
               cursor: 'pointer',
@@ -131,8 +131,8 @@ function FilterSheet({ open, onClose, sizes, colors, filterSize, filterColor, on
           }}>Сбросить</button>
           <button onClick={onClose} style={{
             flex: 1, padding: '12px 0', borderRadius: 'var(--radius-xl)',
-            border: 'none', background: '#5b6ef5',
-            color: '#fff', fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
+            border: 'none', background: 'var(--action-primary-bg)',
+            color: 'var(--action-primary-fg)', fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
           }}>Применить</button>
         </div>
       </div>
@@ -191,8 +191,8 @@ export function ProductsPage() {
             style={{
               padding: 8, borderRadius: 'var(--radius-lg)',
               border: 'none', cursor: 'pointer',
-              background: hasFilters ? 'rgba(91,110,245,0.12)' : 'none',
-              color: hasFilters ? '#5b6ef5' : 'var(--text-tertiary)',
+              background: hasFilters ? 'var(--accent-soft)' : 'none',
+              color: hasFilters ? 'var(--accent-text)' : 'var(--text-tertiary)',
             }}
             aria-label="Фильтры"
           >
@@ -211,8 +211,8 @@ export function ProductsPage() {
               <button onClick={() => setFilterSize('Все')} style={{
                 display: 'flex', alignItems: 'center', gap: 4,
                 padding: '4px 10px', borderRadius: 'var(--radius-lg)',
-                background: 'rgba(91,110,245,0.1)', border: '1px solid rgba(91,110,245,0.25)',
-                color: '#5b6ef5', fontSize: 11, cursor: 'pointer',
+                background: 'var(--accent-soft)', border: '1px solid var(--accent-border)',
+                color: 'var(--accent-text)', fontSize: 11, cursor: 'pointer',
               }}>
                 Размер: {filterSize} <X size={10} />
               </button>
@@ -221,8 +221,8 @@ export function ProductsPage() {
               <button onClick={() => setFilterColor('Все')} style={{
                 display: 'flex', alignItems: 'center', gap: 4,
                 padding: '4px 10px', borderRadius: 'var(--radius-lg)',
-                background: 'rgba(91,110,245,0.1)', border: '1px solid rgba(91,110,245,0.25)',
-                color: '#5b6ef5', fontSize: 11, cursor: 'pointer',
+                background: 'var(--accent-soft)', border: '1px solid var(--accent-border)',
+                color: 'var(--accent-text)', fontSize: 11, cursor: 'pointer',
               }}>
                 Цвет: {filterColor} <X size={10} />
               </button>
@@ -248,7 +248,7 @@ export function ProductsPage() {
             action={!query && !hasFilters ? (
               <button onClick={() => setSheet({ type: 'create' })} style={{
                 marginTop: 8, padding: '10px 20px', borderRadius: 'var(--radius-xl)',
-                border: 'none', background: '#5b6ef5', color: '#fff',
+                border: 'none', background: 'var(--action-primary-bg)', color: 'var(--action-primary-fg)',
                 fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer',
               }}>
                 + Добавить товар
@@ -264,9 +264,9 @@ export function ProductsPage() {
         style={{
           position: 'fixed', bottom: 88, right: 16, zIndex: 30,
           width: 56, height: 56, borderRadius: '50%',
-          background: '#5b6ef5', color: '#fff', border: 'none', cursor: 'pointer',
+          background: 'var(--accent)', color: 'var(--text-on-accent)', border: 'none', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 20px rgba(91,110,245,0.45)',
+          boxShadow: '0 4px 20px rgba(255,237,0,0.35)',
           transition: 'transform var(--dur-fast)',
         }}
         aria-label="Добавить товар"

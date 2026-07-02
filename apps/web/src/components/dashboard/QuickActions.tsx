@@ -14,7 +14,7 @@ interface QuickAction {
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { id: 'new-order',   label: 'Новый заказ',  icon: Plus,     background: '#5b6ef5',              color: '#fff', roles: ['ADMIN', 'MANAGER']   },
+  { id: 'new-order',   label: 'Новый заказ',  icon: Plus,     background: 'var(--accent)',         color: 'var(--text-on-accent)', roles: ['ADMIN', 'MANAGER']   },
   { id: 'new-receipt', label: 'Приход сырья', icon: Package,  background: 'var(--success-solid)', color: '#fff', roles: ['ADMIN', 'WAREHOUSE'] },
   { id: 'new-produce', label: 'Задание цеху', icon: Scissors, background: 'var(--warning-solid)', color: '#fff', roles: ['ADMIN', 'WAREHOUSE'] },
   { id: 'kanban',      label: 'Канбан',        icon: Columns,  background: '#7c3aed',              color: '#fff', roles: ['ADMIN', 'MANAGER']   },

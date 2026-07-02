@@ -11,23 +11,39 @@ export class WarehouseService {
     private products: ProductsService,
   ) {}
 
-  async getStockList(query: PaginationDto & { lowStock?: boolean }) {
-    const { page = 1, limit = 50, search, lowStock } = query;
+  async getStockList(query: PaginationDto & { lowStock?: string | boolean }) {
+    const { page = 1, limit = 50, search } = query;
+    const lowStock = query.lowStock === true || query.lowStock === 'true';
+
+    // Batch stock calculation via single aggregation query
+    const stockAgg = await this.prisma.productMovement.groupBy({
+      by: ['productId', 'type'],
+      _sum: { qty: true },
+    });
+
+    // Build stockMap: productId → available stock
+    const stockMap: Record<string, number> = {};
+    for (const row of stockAgg) {
+      if (!stockMap[row.productId]) stockMap[row.productId] = 0;
+      if (row.type === 'IN' || row.type === 'PRODUCE' || row.type === 'RETURN') {
+        stockMap[row.productId] += row._sum.qty ?? 0;
+      }
+      if (row.type === 'OUT' || row.type === 'SHIP' || row.type === 'RESERVE') {
+        stockMap[row.productId] -= row._sum.qty ?? 0;
+      }
+    }
+
     const where: any = { deletedAt: null };
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { article: { contains: search, mode: 'insensitive' } },
+        { color: { contains: search, mode: 'insensitive' } },
       ];
     }
 
-    const prods = await this.prisma.product.findMany({ where });
-    const withStock = await Promise.all(
-      prods.map(async (p) => {
-        const stock = await this.products.getStock(p.id);
-        return { ...p, stock };
-      }),
-    );
+    const prods = await this.prisma.product.findMany({ where, orderBy: { createdAt: 'desc' } });
+    const withStock = prods.map(p => ({ ...p, stock: Math.max(0, stockMap[p.id] ?? 0) }));
     const filtered = lowStock ? withStock.filter(p => p.stock <= 5) : withStock;
     const start = (page - 1) * limit;
     return { items: filtered.slice(start, start + limit), total: filtered.length, page, limit };

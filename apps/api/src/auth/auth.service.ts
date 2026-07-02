@@ -64,8 +64,9 @@ export class AuthService {
   private async createRefreshToken(userId: string): Promise<string> {
     const token = randomBytes(64).toString('hex');
     const expiresAt = new Date();
-    const daysStr = this.config.get('JWT_REFRESH_EXPIRES_IN', '7d');
-    const days = parseInt(daysStr as string);
+    const daysStr = this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '7d');
+    // Parse values like "7d", "30d", "7" — extract leading digits
+    const days = parseInt((daysStr.match(/^\d+/) ?? ['7'])[0], 10);
     expiresAt.setDate(expiresAt.getDate() + (isNaN(days) ? 7 : days));
     await this.prisma.refreshToken.create({ data: { token, userId, expiresAt } });
     return token;

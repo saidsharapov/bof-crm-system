@@ -17,11 +17,20 @@ export interface StockItem {
 export interface WarehouseMovement {
   id: string
   productId: string
-  type: 'IN' | 'OUT'
+  type: string   // IN | OUT | RESERVE | PRODUCE | SHIP | RETURN
   qty: number
   comment: string
-  actor?: string
+  actorName?: string
+  actor?: string  // alias for compatibility
   createdAt: string
+  product?: {
+    id: string
+    name: string
+    article: string
+    size: string
+    color: string
+    colorHex: string
+  }
 }
 
 export const warehouseApi = {

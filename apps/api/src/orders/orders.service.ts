@@ -14,8 +14,13 @@ export class OrdersService {
   ) {}
 
   private async generateNum(): Promise<string> {
-    const count = await this.prisma.order.count();
-    return `#${String(count + 1).padStart(4, '0')}`;
+    // Use MAX(num) to avoid race condition with concurrent inserts
+    const result = await this.prisma.$queryRaw<[{ max: string | null }]>`
+      SELECT MAX("num") as max FROM orders
+    `;
+    const lastNum = result[0]?.max;
+    const next = lastNum ? parseInt(lastNum.replace('#', ''), 10) + 1 : 1;
+    return `#${String(next).padStart(4, '0')}`;
   }
 
   async findAll(query: PaginationDto & { status?: string }) {

@@ -1,0 +1,17 @@
+# Root-level .dockerignore — applies when build context is "." (project root)
+.git
+.idea
+.claude
+design
+node_modules
+apps/api/node_modules
+apps/api/dist
+apps/web/node_modules
+apps/web/dist
+packages/*/node_modules
+**/.env
+**/.env.local
+**/coverage
+**/test
+**/*.spec.ts
+**/*.test.ts

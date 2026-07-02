@@ -12,7 +12,6 @@ import { formatUZS, formatDeadline, getDeadlineStatus, toDatetimeLocal } from '@
 import { useOrderSourceStore } from '@/store/orderSourceStore'
 import { useProductStore } from '@/store/productStore'
 import { useStockStore } from '@/store/stockStore'
-import { useAuthStore } from '@/store/authStore'
 import { SearchSelect } from '@/components/ui/SearchSelect'
 import { NumberInput }  from '@/components/ui/NumberInput'
 import { PhoneInput }   from '@/components/ui/PhoneInput'
@@ -85,11 +84,10 @@ const labelStyle: React.CSSProperties = {
 
 // ── Order modal ───────────────────────────────────────────────────────────────
 function OrderModal({ target, onClose }: { target: 'new' | Order; onClose: () => void }) {
-  const { createOrder, updateOrder } = useOrderStore()
+  const { createOrder, updateOrder, setStatus } = useOrderStore()
   const { sources } = useOrderSourceStore()
   const { products } = useProductStore()
-  const { getStock, addMovement } = useStockStore()
-  const { user } = useAuthStore()
+  const { getStock } = useStockStore()
   const isNew  = target === 'new'
   const order  = isNew ? null : (target as Order)
 
@@ -107,18 +105,6 @@ function OrderModal({ target, onClose }: { target: 'new' | Order; onClose: () =>
   const watchedSource = watch('source')
   const liveTotal = calcTotal((watchedItems ?? []).map((it) => ({ productId: it.productId, qty: Number(it.qty) || 0, price: Number(it.price) || 0 })))
 
-  function applyStockMovement(
-    orderNum: string,
-    items: { productId: string; qty: number }[],
-    direction: 'OUT' | 'IN',
-  ) {
-    const actor  = user?.name ?? 'CRM'
-    const prefix = direction === 'OUT' ? 'Отгрузка' : 'Возврат'
-    items.forEach((item) => {
-      addMovement(item.productId, direction, item.qty, `${prefix} заказ ${orderNum}`, actor)
-    })
-  }
-
   function onSubmit(data: FormData) {
     const deadlineISO = data.deadline ? new Date(data.deadline).toISOString() : undefined
     if (isNew) {
@@ -126,14 +112,17 @@ function OrderModal({ target, onClose }: { target: 'new' | Order; onClose: () =>
     } else if (order) {
       const prevStatus = order.status
       const nextStatus = data.status
-      if (prevStatus !== nextStatus) {
-        if (nextStatus === 'DELIVERED' && prevStatus !== 'DELIVERED') {
-          applyStockMovement(order.num, data.items, 'OUT')
-        } else if (prevStatus === 'DELIVERED' && nextStatus !== 'DELIVERED') {
-          applyStockMovement(order.num, order.items, 'IN')
-        }
+      const canEdit = prevStatus === 'NEW' || prevStatus === 'IN_WORK'
+
+      // Update order data only when the order is in an editable state
+      if (canEdit) {
+        updateOrder(order.id, { clientName: data.clientName, phone: data.phone, address: data.address, comment: data.comment, source: data.source || undefined, deadline: deadlineISO, items: data.items })
       }
-      updateOrder(order.id, { clientName: data.clientName, phone: data.phone, address: data.address, comment: data.comment, source: data.source || undefined, deadline: deadlineISO, status: data.status, items: data.items })
+
+      // Status transitions are handled by the backend via setStatus (stock movements included)
+      if (prevStatus !== nextStatus) {
+        setStatus(order.id, nextStatus)
+      }
     }
     onClose()
   }
@@ -475,8 +464,6 @@ function KanbanCard({
 // ── Kanban board ──────────────────────────────────────────────────────────────
 function KanbanBoard({ orders, onEdit }: { orders: Order[]; onEdit: (o: Order) => void }) {
   const { setStatus } = useOrderStore()
-  const { addMovement } = useStockStore()
-  const { user } = useAuthStore()
 
   const drag = useRef<{
     orderId: string
@@ -549,22 +536,8 @@ function KanbanBoard({ orders, onEdit }: { orders: Order[]; onEdit: (o: Order) =
 
     if (d.activeCol) {
       const newStatus = d.activeCol
-      const order     = orders.find((o) => o.id === d.orderId)
 
-      if (order && order.status !== newStatus) {
-        const actor = user?.name ?? 'CRM'
-
-        if (newStatus === 'DELIVERED' && order.status !== 'DELIVERED') {
-          order.items.forEach((item) => {
-            addMovement(item.productId, 'OUT', item.qty, `Отгрузка заказ ${order.num}`, actor)
-          })
-        } else if (order.status === 'DELIVERED' && newStatus !== 'DELIVERED') {
-          order.items.forEach((item) => {
-            addMovement(item.productId, 'IN', item.qty, `Возврат заказ ${order.num}`, actor)
-          })
-        }
-      }
-
+      // Stock movements are handled on the backend when setStatus is called
       setStatus(d.orderId, newStatus)
       const el = colRefs.current.get(d.activeCol)
       if (el) el.style.background = 'var(--bg-subtle)'
@@ -572,7 +545,7 @@ function KanbanBoard({ orders, onEdit }: { orders: Order[]; onEdit: (o: Order) =
 
     d.ghost.remove()
     drag.current = null
-  }, [setStatus, addMovement, user, orders])
+  }, [setStatus])
 
   const byStatus = (s: OrderStatus) => orders.filter((o) => o.status === s)
 

@@ -61,8 +61,8 @@ export class ProductsService {
     });
     let stock = 0;
     for (const g of agg) {
-      if (g.type === 'IN' || g.type === 'PRODUCE') stock += g._sum.qty ?? 0;
-      if (g.type === 'OUT' || g.type === 'SHIP') stock -= g._sum.qty ?? 0;
+      if (g.type === 'IN' || g.type === 'PRODUCE' || g.type === 'RETURN') stock += g._sum.qty ?? 0;
+      if (g.type === 'OUT' || g.type === 'SHIP' || g.type === 'RESERVE') stock -= g._sum.qty ?? 0;
     }
     return Math.max(0, stock);
   }

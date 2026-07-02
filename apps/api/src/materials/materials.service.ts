@@ -44,7 +44,8 @@ export class MaterialsService {
 
   async getStock(id: string): Promise<number> {
     const movs = await this.prisma.materialMovement.findMany({ where: { materialId: id } });
-    return movs.reduce((acc, m) => m.type === 'IN' ? acc + m.qty : acc - m.qty, 0);
+    const raw = movs.reduce((acc, m) => m.type === 'IN' ? acc + m.qty : acc - m.qty, 0);
+    return Math.max(0, raw);
   }
 
   async addMovement(id: string, dto: AddMaterialMovementDto, actorId: string, actorName: string) {

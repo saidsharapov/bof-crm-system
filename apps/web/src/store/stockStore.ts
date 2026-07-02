@@ -38,10 +38,10 @@ function mapMovement(m: WarehouseMovement): Movement {
   return {
     id: m.id,
     productId: m.productId,
-    type: m.type,
+    type: m.type as MovementType,
     qty: m.qty,
     comment: m.comment ?? '',
-    actor: m.actor ?? '',
+    actor: m.actorName ?? m.actor ?? '',
     createdAt: m.createdAt,
   }
 }

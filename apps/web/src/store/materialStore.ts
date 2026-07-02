@@ -49,10 +49,10 @@ function mapMov(m: ApiMovement): MaterialMovement {
   return {
     id: m.id,
     materialId: m.materialId,
-    type: m.type,
+    type: m.type as 'IN' | 'OUT',
     qty: m.qty,
     comment: m.comment ?? '',
-    actor: m.actor ?? '',
+    actor: m.actorName ?? m.actor ?? '',
     createdAt: m.createdAt,
   }
 }

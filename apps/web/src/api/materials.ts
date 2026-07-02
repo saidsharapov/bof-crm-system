@@ -11,10 +11,11 @@ export interface Material {
 export interface MaterialMovement {
   id: string
   materialId: string
-  type: 'IN' | 'OUT'
+  type: string  // IN | OUT
   qty: number
   comment: string
-  actor?: string
+  actorName?: string
+  actor?: string  // alias for compatibility
   createdAt: string
 }
 

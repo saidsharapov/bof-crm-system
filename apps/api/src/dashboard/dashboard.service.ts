@@ -87,12 +87,16 @@ export class DashboardService {
   }
 
   private async getLowStockCount(): Promise<number> {
-    const products = await this.prisma.product.findMany({ where: { deletedAt: null } });
-    let count = 0;
-    for (const p of products) {
-      const stock = await this.products.getStock(p.id);
-      if (stock <= 5) count++;
+    const [products, stockAgg] = await Promise.all([
+      this.prisma.product.findMany({ where: { deletedAt: null }, select: { id: true } }),
+      this.prisma.productMovement.groupBy({ by: ['productId', 'type'], _sum: { qty: true } }),
+    ]);
+    const stockMap: Record<string, number> = {};
+    for (const row of stockAgg) {
+      if (!stockMap[row.productId]) stockMap[row.productId] = 0;
+      if (row.type === 'IN' || row.type === 'PRODUCE' || row.type === 'RETURN') stockMap[row.productId] += row._sum.qty ?? 0;
+      if (row.type === 'OUT' || row.type === 'SHIP' || row.type === 'RESERVE') stockMap[row.productId] -= row._sum.qty ?? 0;
     }
-    return count;
+    return products.filter(p => Math.max(0, stockMap[p.id] ?? 0) <= 5).length;
   }
 }

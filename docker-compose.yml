@@ -1,36 +1,68 @@
-version: '3.8'
-
 services:
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: bof_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: bof_crm
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      POSTGRES_DB:       ${POSTGRES_DB:-bof_crm}
+      POSTGRES_USER:     ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-bof_crm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Not exposed externally — only reachable by api container on internal network
 
+  # ── NestJS API ──────────────────────────────────────────────────────────────
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .                      # root — contains pnpm-lock.yaml
+      dockerfile: apps/api/Dockerfile
     container_name: bof_api
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bof_crm
-      JWT_ACCESS_SECRET: change-me-in-production-access
-      JWT_REFRESH_SECRET: change-me-in-production-refresh
-      JWT_ACCESS_EXPIRES_IN: 15m
-      JWT_REFRESH_EXPIRES_IN: 7d
-      PORT: 3001
-    ports:
-      - "3001:3001"
+      DATABASE_URL:            postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bof_crm}
+      JWT_ACCESS_SECRET:       ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+      JWT_REFRESH_SECRET:      ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
+      JWT_ACCESS_EXPIRES_IN:   ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN:  ${JWT_REFRESH_EXPIRES_IN:-7d}
+      PORT:                    3001
+      NODE_ENV:                production
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    # Not exposed externally — proxied by nginx on /api
+
+  # ── React + Nginx (frontend + reverse proxy) ─────────────────────────────────
+  web:
+    build:
+      context: .                      # root — contains pnpm-lock.yaml
+      dockerfile: apps/web/Dockerfile
+    container_name: bof_web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro   # SSL certs (obtained via certbot)
+      - certbot_www:/var/www/certbot:ro          # ACME challenge webroot
+    depends_on:
+      - api
+
+  # ── Certbot — auto-renews Let's Encrypt certificates ────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    container_name: bof_certbot
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    # Checks for renewal every 12 hours (certbot skips if cert is still valid)
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done"
 
 volumes:
   postgres_data:
+  certbot_www:
